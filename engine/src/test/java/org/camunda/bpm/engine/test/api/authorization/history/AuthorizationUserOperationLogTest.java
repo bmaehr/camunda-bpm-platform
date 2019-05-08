@@ -43,7 +43,7 @@ import org.camunda.bpm.engine.test.api.identity.TestResource;
 @RequiredHistoryLevel(ProcessEngineConfiguration.HISTORY_FULL)
 public class AuthorizationUserOperationLogTest extends AuthorizationTest {
 
-  public void testLogCreatedOnAuthorizationCreation() {
+  public void test1LogCreatedOnAuthorizationCreation() {
     // given
     UserOperationLogQuery query = historyService.createUserOperationLogQuery();
     assertEquals(0, query.count());
@@ -91,7 +91,7 @@ public class AuthorizationUserOperationLogTest extends AuthorizationTest {
     assertEquals("testGroupId", entry.getNewValue());
   }
   
-  public void testLogCreatedOnAuthorizationUpdate() {
+  public void test1LogCreatedOnAuthorizationUpdate() {
     // given
     UserOperationLogQuery query = historyService.createUserOperationLogQuery();
     identityService.clearAuthentication();
@@ -213,7 +213,7 @@ public class AuthorizationUserOperationLogTest extends AuthorizationTest {
     assertEquals("testUserId", entry.getNewValue());
   }
   
-  public void testLogCreatedOnAuthorizationCreationWithExceedingPermissionStringList() {
+  public void test1LogCreatedOnAuthorizationCreationWithExceedingPermissionStringList() {
     // given
     UserOperationLogQuery query = historyService.createUserOperationLogQuery();
     assertEquals(0, query.count());

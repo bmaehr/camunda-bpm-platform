@@ -25,7 +25,7 @@ import org.camunda.bpm.engine.impl.pvm.PvmException;
 import org.camunda.bpm.engine.impl.pvm.process.ScopeImpl;
 import org.camunda.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 
-
+// XXX
 public class FoxAtomicOperationDeleteCascadeFireActivityEnd extends PvmAtomicOperationDeleteCascadeFireActivityEnd {
 
   @Override

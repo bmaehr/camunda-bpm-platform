@@ -854,6 +854,7 @@ public class ExecutionListenerTest {
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
   }
+
   @Test
   public void testThrowBpmnErrorInStartListenerServiceTaskAndEndListener() {
     BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
@@ -882,6 +883,41 @@ public class ExecutionListenerTest {
     assertEquals("bar", runtimeService.createVariableInstanceQuery().variableName("foo").singleResult().getValue());
   }
 
+  @Test
+  public void testThrowBpmnErrorInStartListenerOfStartEventAndCallActivity() {
+    // given
+    BpmnModelInstance subprocess = Bpmn.createExecutableProcess("subprocess")
+        .startEvent()
+        .userTask("userTask1")
+        .serviceTask("throw")
+          .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_START, ThrowBPMNErrorDelegate.class.getName())
+          .camundaExpression("${true}")
+        .userTask("afterService")
+        .done();
+    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
+    BpmnModelInstance parent = processBuilder
+        .startEvent()
+        .callActivity()
+          .calledElement("subprocess")
+        .userTask("afterCallActivity")
+        .done();
+    
+    processBuilder.eventSubProcess()
+    .startEvent("errorEvent").error(ERROR_CODE)
+      .userTask("afterCatch")
+    .endEvent();
+
+    testHelper.deploy(parent, subprocess);
+
+    // when
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    taskService.complete(task.getId());
+
+    // then
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
   protected BpmnModelInstance createModelWithCatchInServiceTaskAndListener(String eventName) {
     return Bpmn.createExecutableProcess(PROCESS_KEY)
           .startEvent()
@@ -939,6 +975,7 @@ public class ExecutionListenerTest {
        .endEvent();
     return model;
   }
+
 
   public static class ThrowBPMNErrorDelegate implements JavaDelegate {
 

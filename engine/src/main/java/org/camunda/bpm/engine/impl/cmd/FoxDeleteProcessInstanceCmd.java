@@ -26,7 +26,7 @@ import org.camunda.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 
-
+// XXX
 public class FoxDeleteProcessInstanceCmd implements Command<Void>, Serializable {
 
   private static final long serialVersionUID = 1L;

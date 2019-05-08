@@ -57,6 +57,7 @@ public abstract class PvmAtomicOperationActivityInstanceEnd extends AbstractPvmE
 
 
     }
+    execution.setTransition(null);
 
     return execution;
 

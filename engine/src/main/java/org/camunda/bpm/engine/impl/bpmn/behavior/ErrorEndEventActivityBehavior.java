@@ -16,6 +16,7 @@
  */
 package org.camunda.bpm.engine.impl.bpmn.behavior;
 
+import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
 
 
@@ -32,7 +33,7 @@ public class ErrorEndEventActivityBehavior extends AbstractBpmnActivityBehavior 
   }
 
   public void execute(ActivityExecution execution) throws Exception {
-    propagateError(errorCode, null, null, execution);
+    ExceptionHandler.propagateError(errorCode, null, null, execution);
   }
 
   public String getErrorCode() {

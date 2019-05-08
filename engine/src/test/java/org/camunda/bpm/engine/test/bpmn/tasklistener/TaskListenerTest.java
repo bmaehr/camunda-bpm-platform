@@ -382,6 +382,30 @@ public class TaskListenerTest {
     // then
     assertEquals(1, AssignmentTaskListener.eventCounter);
   }
+  
+//  @Test
+//  @Deployment(resources = {
+//    "org/camunda/bpm/engine/test/bpmn/executionlistener/ExecutionListenerTest.testScriptResourceListener.bpmn20.xml",
+//    "org/camunda/bpm/engine/test/bpmn/executionlistener/executionListener.groovy"
+//  })
+//  public void testScriptResourceListener() {
+//    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("process");
+//    assertTrue(processInstance.isEnded());
+//
+//    if (processEngineRule.getProcessEngineConfiguration().getHistoryLevel().getId() >= HISTORYLEVEL_AUDIT) {
+//      HistoricVariableInstanceQuery query = historyService.createHistoricVariableInstanceQuery();
+//      long count = query.count();
+//      assertEquals(5, count);
+//
+//      HistoricVariableInstance variableInstance = null;
+//      String[] variableNames = new String[]{"start-start", "start-end", "start-take", "end-start", "end-end"};
+//      for (String variableName : variableNames) {
+//        variableInstance = query.variableName(variableName).singleResult();
+//        assertNotNull("Unable ot find variable with name '" + variableName + "'", variableInstance);
+//        assertTrue("Variable '" + variableName + "' should be set to true", (Boolean) variableInstance.getValue());
+//      }
+//    }
+//  }
 
   public static class VariablesCollectingListener implements TaskListener {
 

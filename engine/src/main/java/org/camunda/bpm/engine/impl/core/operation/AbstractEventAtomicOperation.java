@@ -20,9 +20,13 @@ import java.util.List;
 
 import org.camunda.bpm.engine.delegate.BaseDelegateExecution;
 import org.camunda.bpm.engine.delegate.DelegateListener;
+import org.camunda.bpm.engine.exception.ErrorPropagationException;
+import org.camunda.bpm.engine.impl.core.CoreLogger;
+import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.core.instance.CoreExecution;
 import org.camunda.bpm.engine.impl.core.model.CoreModelElement;
 import org.camunda.bpm.engine.impl.pvm.PvmException;
+import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
 
 
 /**
@@ -30,12 +34,16 @@ import org.camunda.bpm.engine.impl.pvm.PvmException;
  */
 public abstract class AbstractEventAtomicOperation<T extends CoreExecution> implements CoreAtomicOperation<T> {
 
+  private final static CoreLogger LOG = CoreLogger.CORE_LOGGER;
+
+  protected boolean isPropagedException = false;
+
   public boolean isAsync(T execution) {
     return false;
   }
 
   public void execute(T execution) {
-
+    boolean shouldContinueListenerExecution = true;
     CoreModelElement scope = getScope(execution);
     List<DelegateListener<? extends BaseDelegateExecution>> listeners = getListeners(scope, execution);
     int listenerIndex = execution.getListenerIndex();
@@ -52,26 +60,51 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
         DelegateListener<? extends BaseDelegateExecution> listener = listeners.get(listenerIndex);
         try {
           execution.setListenerIndex(listenerIndex+1);
-          execution.invokeListener(listener);
+          try {
+            execution.invokeListener(listener);
+          } catch (Exception ex) {
+            if(isPropagedException()) {
+              ActivityExecution activityExecution = (ActivityExecution)execution;
+              try {
+                ExceptionHandler.propagateException(activityExecution, ex);
+                shouldContinueListenerExecution = false;
+              } catch (ErrorPropagationException e) {
+                 LOG.errorPropagationException(activityExecution.getActivityInstanceId(), e.getCause());
+                // re-throw the original exception so that it is logged
+                // and set as cause of the failure
+                throw ex;
+              }
+
+            }
+            else {
+              throw ex;
+            }
+          }
         } catch (RuntimeException e) {
           throw e;
         } catch (Exception e) {
           throw new PvmException("couldn't execute event listener : "+e.getMessage(), e);
         }
-        execution.performOperationSync(this);
+        if(shouldContinueListenerExecution) {
+          execution.performOperationSync(this);
+        }
 
       } else {
-        execution.setListenerIndex(0);
-        execution.setEventName(null);
-        execution.setEventSource(null);
-
-        eventNotificationsCompleted(execution);
+        resetListeners(execution);
       }
 
     } else {
       eventNotificationsCompleted(execution);
 
     }
+  }
+
+  protected void resetListeners(T execution) {
+    execution.setListenerIndex(0);
+    execution.setEventName(null);
+    execution.setEventSource(null);
+
+    eventNotificationsCompleted(execution);
   }
 
   protected List<DelegateListener<? extends BaseDelegateExecution>> getListeners(CoreModelElement scope, T execution) {
@@ -94,4 +127,8 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
   protected abstract CoreModelElement getScope(T execution);
   protected abstract String getEventName();
   protected abstract void eventNotificationsCompleted(T execution);
+
+  public boolean isPropagedException() {
+    return isPropagedException;
+  }
 }

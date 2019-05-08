@@ -570,6 +570,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     performOperation(PvmAtomicOperation.DELETE_CASCADE);
   }
 
+  // XXX
   public void deleteCascade2(String deleteReason) {
     this.deleteReason = deleteReason;
     setDeleteRoot(true);

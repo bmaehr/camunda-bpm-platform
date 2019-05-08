@@ -66,6 +66,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ExecutionListenerTest {
 
+  protected static final String ERROR_CODE = "208";
   protected static final String PROCESS_KEY = "Process";
   public ProcessEngineRule processEngineRule = new ProvidedProcessEngineRule();
   public ProcessEngineTestRule testHelper = new ProcessEngineTestRule(processEngineRule);
@@ -651,7 +652,7 @@ public class ExecutionListenerTest {
     model.<SequenceFlow>getModelElementById("flow1").builder().addExtensionElement(listener);
 
     processBuilder.eventSubProcess()
-        .startEvent("errorEvent").error("208")
+        .startEvent("errorEvent").error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent();
 
@@ -679,7 +680,7 @@ public class ExecutionListenerTest {
         .done();
     
     processBuilder.eventSubProcess()
-        .startEvent("errorEvent").error("208")
+        .startEvent("errorEvent").error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent();
     
@@ -706,7 +707,7 @@ public class ExecutionListenerTest {
             .endEvent()
           .subProcessDone()
         .boundaryEvent("errorEvent")
-        .error("208")
+        .error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent("endEvent")
         .moveToActivity("sub")
@@ -738,7 +739,7 @@ public class ExecutionListenerTest {
         .done();
     
     processBuilder.eventSubProcess()
-        .startEvent("errorEvent").error("208")
+        .startEvent("errorEvent").error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent();
     
@@ -765,7 +766,7 @@ public class ExecutionListenerTest {
           .camundaExpression("${true}")
           .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
         .boundaryEvent()
-        .error("208")
+        .error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent()
         .done();
@@ -778,6 +779,38 @@ public class ExecutionListenerTest {
 
     // then
     // TODO verify for something else? but what?
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
+
+  @Test
+  public void testThrowBpmnErrorInEndListenerOfLastEventAndSubprocessWithCatch() {
+    // given
+    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
+        .startEvent()
+        .userTask("userTask1")
+        .subProcess("sub")
+          .embeddedSubProcess()
+            .startEvent("inSub")
+            .serviceTask("throw")
+              .camundaExpression("${true}")
+              .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
+        .boundaryEvent()
+        .error(ERROR_CODE)
+        .userTask("afterCatch")
+        .moveToActivity("sub")
+        .userTask("afterSub")
+        .endEvent()
+        .done();
+
+    testHelper.deploy(model);
+
+    // when
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    taskService.complete(task.getId());
+
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
   }
@@ -794,7 +827,7 @@ public class ExecutionListenerTest {
             .userTask("taskWithListener")
             .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
             .boundaryEvent("errorEvent")
-            .error("208")
+            .error(ERROR_CODE)
             .userTask("afterCatch")
             .endEvent()
           .subProcessDone()
@@ -831,7 +864,7 @@ public class ExecutionListenerTest {
           .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, SetVarDelegate.class.getName())
           .camundaExpression("${true}")
         .boundaryEvent("errorEvent")
-        .error("208")
+        .error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent("endEvent")
         .moveToActivity("throw")
@@ -853,11 +886,11 @@ public class ExecutionListenerTest {
     return Bpmn.createExecutableProcess(PROCESS_KEY)
           .startEvent()
           .userTask("userTask1")
-          .serviceTask("throw")
+          .userTask("throw")
             .camundaExecutionListenerClass(eventName, ThrowBPMNErrorDelegate.class.getName())
-            .camundaExpression("${true}")
+//            .camundaExpression("${true}")
           .boundaryEvent("errorEvent")
-          .error("208")
+          .error(ERROR_CODE)
           .userTask("afterCatch")
           .endEvent("endEvent")
           .moveToActivity("throw")
@@ -880,7 +913,7 @@ public class ExecutionListenerTest {
               .endEvent()
             .subProcessDone()
           .boundaryEvent("errorEvent")
-          .error("208")
+          .error(ERROR_CODE)
           .userTask("afterCatch")
           .endEvent("endEvent")
           .moveToActivity("sub")
@@ -901,7 +934,7 @@ public class ExecutionListenerTest {
         .endEvent()
         .done();
     processBuilder.eventSubProcess()
-       .startEvent("errorEvent").error("208")
+       .startEvent("errorEvent").error(ERROR_CODE)
          .userTask("afterCatch")
        .endEvent();
     return model;
@@ -911,7 +944,7 @@ public class ExecutionListenerTest {
 
     @Override
     public void execute(DelegateExecution execution) throws Exception {
-      throw new BpmnError("208", "brum");
+      throw new BpmnError(ERROR_CODE, "business error");
     }
   }
   

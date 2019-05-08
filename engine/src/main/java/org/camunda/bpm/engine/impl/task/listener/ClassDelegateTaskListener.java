@@ -19,13 +19,17 @@ package org.camunda.bpm.engine.impl.task.listener;
 import static org.camunda.bpm.engine.impl.util.ClassDelegateUtil.instantiateDelegate;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.TaskListener;
+import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.bpmn.parser.FieldDeclaration;
 import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.delegate.ClassDelegate;
+import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
 import org.camunda.bpm.engine.impl.task.delegate.TaskListenerInvocation;
 
 /**
@@ -43,14 +47,52 @@ public class ClassDelegateTaskListener extends ClassDelegate implements TaskList
   }
 
   public void notify(DelegateTask delegateTask) {
-    TaskListener taskListenerInstance = getTaskListenerInstance();
+    final TaskListener taskListenerInstance = getTaskListenerInstance();
+//    try {
+//      Context.getProcessEngineConfiguration()
+//        .getDelegateInterceptor()
+//        .handleInvocation(new TaskListenerInvocation(taskListenerInstance, delegateTask));
+//
+//    }catch (Exception e) {
+//      throw new ProcessEngineException("Exception while invoking TaskListener: "+e.getMessage(), e);
+//    }
+    final DelegateTask task = delegateTask;
+    ActivityExecution execution = (ActivityExecution) delegateTask.getExecution();
     try {
-      Context.getProcessEngineConfiguration()
-        .getDelegateInterceptor()
-        .handleInvocation(new TaskListenerInvocation(taskListenerInstance, delegateTask));
-
-    }catch (Exception e) {
+      executeWithErrorPropagation(execution, delegateTask.getEventName(), new Callable<Void>() {
+        @Override
+        public Void call() throws Exception {
+          Context.getProcessEngineConfiguration()
+          .getDelegateInterceptor()
+          .handleInvocation(new TaskListenerInvocation(taskListenerInstance, task));
+          return null;
+        }
+      });
+    } catch (Exception e) {
       throw new ProcessEngineException("Exception while invoking TaskListener: "+e.getMessage(), e);
+    }
+  }
+  protected void executeWithErrorPropagation(ActivityExecution execution, String eventName, Callable<Void> toExecute) throws Exception {
+    String activityInstanceId = execution.getActivityInstanceId();
+    try {
+      toExecute.call();
+    } catch (Exception ex) {
+      if (activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE) ) {
+
+        try {
+          ExceptionHandler.propagateException(execution, ex);
+        }
+        catch (ErrorPropagationException e) {
+//          LOG.errorPropagationException(activityInstanceId, e.getCause());
+          // re-throw the original exception so that it is logged
+          // and set as cause of the failure
+          throw ex;
+        }
+
+      }
+      else {
+        throw ex;
+      }
     }
   }
 

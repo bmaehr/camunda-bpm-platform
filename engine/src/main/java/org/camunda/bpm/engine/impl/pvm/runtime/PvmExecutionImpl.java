@@ -779,6 +779,9 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     }
 
     PvmActivity activityImpl = activity;
+    this.isEnded = false;
+    this.isActive = true;
+
     switch (activityStartBehavior) {
       case CONCURRENT_IN_FLOW_SCOPE:
         this.nextActivity = activityImpl;

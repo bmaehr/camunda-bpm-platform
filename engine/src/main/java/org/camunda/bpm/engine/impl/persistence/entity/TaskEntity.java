@@ -23,6 +23,7 @@ import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.Expression;
 import org.camunda.bpm.engine.delegate.TaskListener;
 import org.camunda.bpm.engine.delegate.VariableScope;
+import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.exception.NullValueException;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
@@ -30,6 +31,7 @@ import org.camunda.bpm.engine.impl.cfg.auth.ResourceAuthorizationProvider;
 import org.camunda.bpm.engine.impl.cmmn.entity.repository.CaseDefinitionEntity;
 import org.camunda.bpm.engine.impl.cmmn.entity.runtime.CaseExecutionEntity;
 import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.core.instance.CoreExecution;
 import org.camunda.bpm.engine.impl.core.variable.CoreVariableInstance;
 import org.camunda.bpm.engine.impl.core.variable.event.VariableEvent;
@@ -46,6 +48,7 @@ import org.camunda.bpm.engine.impl.db.entitymanager.DbEntityManager;
 import org.camunda.bpm.engine.impl.history.event.HistoryEventTypes;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextListener;
+import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
 import org.camunda.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 import org.camunda.bpm.engine.impl.task.TaskDefinition;
 import org.camunda.bpm.engine.impl.task.delegate.TaskListenerInvocation;
@@ -71,6 +74,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static org.camunda.bpm.engine.delegate.TaskListener.EVENTNAME_DELETE;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
@@ -956,13 +960,45 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
           setEventName(taskEventName);
         }
         try {
-          TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, execution);
-          Context.getProcessEngineConfiguration()
-            .getDelegateInterceptor()
-            .handleInvocation(listenerInvocation);
+          final TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, execution);
+          executeWithErrorPropagation((ActivityExecution) execution, taskEventName, new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+              Context.getProcessEngineConfiguration()
+                .getDelegateInterceptor()
+                .handleInvocation(listenerInvocation);
+              return null;
+            }
+          });
         } catch (Exception e) {
           throw LOG.invokeTaskListenerException(e);
         }
+      }
+    }
+  }
+  protected void executeWithErrorPropagation(ActivityExecution execution, String eventName, Callable<Void> toExecute) throws Exception {
+    String activityInstanceId = null;
+    if (execution != null) {
+      activityInstanceId = execution.getActivityInstanceId();
+    }
+    try {
+      toExecute.call();
+    } catch (Exception ex) {
+      if (activityInstanceId != null && activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
+        try {
+          ExceptionHandler.propagateException(execution, ex);
+        }
+        catch (ErrorPropagationException e) {
+          // TODO
+//          LOG.errorPropagationException(activityInstanceId, e.getCause());
+          // re-throw the original exception so that it is logged
+          // and set as cause of the failure
+          throw ex;
+        }
+
+      }
+      else {
+        throw ex;
       }
     }
   }

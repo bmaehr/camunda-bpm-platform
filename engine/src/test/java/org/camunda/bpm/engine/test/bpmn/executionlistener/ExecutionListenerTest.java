@@ -60,6 +60,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Frederik Heremans
@@ -188,7 +189,7 @@ public class ExecutionListenerTest {
   @Test
   @Deployment(resources = {"org/camunda/bpm/engine/test/bpmn/executionlistener/ExecutionListenersFieldInjectionProcess.bpmn20.xml"})
   public void testExecutionListenerFieldInjection() {
-    Map<String, Object> variables = new HashMap<String, Object>();
+    Map<String, Object> variables = new HashMap<>();
     variables.put("myVar", "listening!");
 
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("executionListenersProcess", variables);
@@ -474,7 +475,7 @@ public class ExecutionListenerTest {
     //end listener should called only once
     assertEquals(1, RecorderExecutionListener.getRecordedEvents().size());
   }
-  
+
   @Test
   @Deployment(resources = "org/camunda/bpm/engine/test/bpmn/executionlistener/ExecutionListenerTest.testMultiInstanceCancelation.bpmn20.xml")
   public void testMultiInstanceCancelationDoesNotAffectEndListener() {
@@ -483,10 +484,10 @@ public class ExecutionListenerTest {
     List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
     taskService.complete(tasks.get(0).getId());
     taskService.complete(tasks.get(2).getId());
-    
+
     // when
     taskService.complete(tasks.get(3).getId());
-    
+
     // then
     assertProcessEnded(processInstance.getId());
     if (processEngineRule.getProcessEngineConfiguration().getHistoryLevel().getId() >= HISTORYLEVEL_AUDIT) {
@@ -499,7 +500,7 @@ public class ExecutionListenerTest {
       assertTrue(Boolean.valueOf(String.valueOf(endVariable.getValue())));
     }
   }
-  
+
   @Test
   @Deployment(resources = "org/camunda/bpm/engine/test/bpmn/executionlistener/ExecutionListenerTest.testMultiInstanceCancelation.bpmn20.xml")
   public void testProcessInstanceCancelationNoticedInEndListener() {
@@ -508,10 +509,10 @@ public class ExecutionListenerTest {
     List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
     taskService.complete(tasks.get(0).getId());
     taskService.complete(tasks.get(2).getId());
-    
+
     // when
     runtimeService.deleteProcessInstance(processInstance.getId(), "myReason");
-    
+
     // then
     assertProcessEnded(processInstance.getId());
     if (processEngineRule.getProcessEngineConfiguration().getHistoryLevel().getId() >= HISTORYLEVEL_AUDIT) {
@@ -524,7 +525,7 @@ public class ExecutionListenerTest {
       assertTrue(Boolean.valueOf(String.valueOf(endVariable.getValue())));
     }
   }
-    
+
   @Test
   public void testThrowBpmnErrorInStartListenerServiceTaskWithCatch() {
     BpmnModelInstance model = createModelWithCatchInServiceTaskAndListener(ExecutionListener.EVENTNAME_START);
@@ -589,7 +590,7 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInEndListenerAndEventSubprocessWithCatch() {
-    
+
     BpmnModelInstance model = createModelWithCatchInEventSubprocessAndListener(ExecutionListener.EVENTNAME_END);
 
     testHelper.deploy(model);
@@ -645,12 +646,12 @@ public class ExecutionListenerTest {
         .userTask("afterListener")
         .endEvent()
         .done();
-    
+
     processBuilder.eventSubProcess()
         .startEvent("errorEvent").error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent();
-    
+
     testHelper.deploy(model);
     // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
@@ -704,12 +705,12 @@ public class ExecutionListenerTest {
           .camundaExpression("${true}")
           .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
         .done();
-    
+
     processBuilder.eventSubProcess()
         .startEvent("errorEvent").error(ERROR_CODE)
         .userTask("afterCatch")
         .endEvent();
-    
+
     System.out.println(Bpmn.convertToString(model));
     testHelper.deploy(model);
     // when
@@ -721,6 +722,12 @@ public class ExecutionListenerTest {
     // TODO verify for something else? but what?
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
+
+  @Test
+  public void testThrowUncaughtBpmnErrorFromEndListenerShouldNotTriggerListenerAgain() {
+    fail("BPMN error from end listener that is not caught should not trigger end listener again => infinite loop"
+        + "however, it must be possible that the token ends in this case, i.e. that higher scopes are cleaned up");
   }
 
   @Test
@@ -737,7 +744,7 @@ public class ExecutionListenerTest {
         .userTask("afterCatch")
         .endEvent()
         .done();
-    
+
     testHelper.deploy(model);
     // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
@@ -781,7 +788,7 @@ public class ExecutionListenerTest {
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
   }
-  
+
   @Test
   public void testThrowBpmnErrorInEndListenerMessageCorrelation() {
     // given
@@ -805,7 +812,7 @@ public class ExecutionListenerTest {
         .moveToActivity("sub")
         .endEvent()
         .done();
-    
+
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
@@ -839,7 +846,7 @@ public class ExecutionListenerTest {
         .userTask("afterService")
         .endEvent()
         .done();
-        
+
         testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
@@ -868,7 +875,7 @@ public class ExecutionListenerTest {
           .calledElement("subprocess")
         .userTask("afterCallActivity")
         .done();
-    
+
     processBuilder.eventSubProcess()
     .startEvent("errorEvent").error(ERROR_CODE)
       .userTask("afterCatch")
@@ -931,7 +938,7 @@ public class ExecutionListenerTest {
           .endEvent()
           .done();
   }
-  
+
   protected BpmnModelInstance createModelWithCatchInSubprocessAndListener(String eventName) {
     return Bpmn.createExecutableProcess(PROCESS_KEY)
           .startEvent()

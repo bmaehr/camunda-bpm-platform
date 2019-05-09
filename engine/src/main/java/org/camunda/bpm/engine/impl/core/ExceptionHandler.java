@@ -51,7 +51,7 @@ public class ExceptionHandler {
       propagateExceptionAsError(ex, execution);
     }
   }
-  
+
 
   protected static void propagateExceptionAsError(Exception exception, ActivityExecution execution) throws Exception {
     if (isProcessEngineExceptionWithoutCause(exception) || isTransactionNotActive()) {
@@ -87,7 +87,7 @@ public class ExceptionHandler {
     }
     return checkIfCauseOfExceptionIsBpmnError(e.getCause());
   }
-  
+
 
   public static void propagateBpmnError(BpmnError error, ActivityExecution execution) throws Exception {
     propagateError(error.getErrorCode(), error.getMessage(), null, execution);

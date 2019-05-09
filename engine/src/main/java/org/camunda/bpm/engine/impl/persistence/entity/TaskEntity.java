@@ -961,7 +961,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
         }
         try {
           final TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, execution);
-          executeWithErrorPropagation((ActivityExecution) execution, taskEventName, new Callable<Void>() {
+          executeWithErrorPropagation(execution, taskEventName, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
               Context.getProcessEngineConfiguration()
@@ -976,17 +976,21 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
       }
     }
   }
-  protected void executeWithErrorPropagation(ActivityExecution execution, String eventName, Callable<Void> toExecute) throws Exception {
+
+  protected void executeWithErrorPropagation(CoreExecution currentExecution, String eventName, Callable<Void> toExecute) throws Exception {
+    // TODO cleanup
     String activityInstanceId = null;
-    if (execution != null) {
-      activityInstanceId = execution.getActivityInstanceId();
+    ActivityExecution activityExecution = null;
+    if (currentExecution instanceof ActivityExecution && currentExecution != null) {
+      activityExecution = (ActivityExecution) currentExecution;
+      activityInstanceId = activityExecution.getActivityInstanceId();
     }
     try {
       toExecute.call();
     } catch (Exception ex) {
-      if (activityInstanceId != null && activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
+      if (activityInstanceId != null && activityInstanceId.equals(activityExecution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
         try {
-          ExceptionHandler.propagateException(execution, ex);
+          ExceptionHandler.propagateException(activityExecution, ex);
         }
         catch (ErrorPropagationException e) {
           // TODO

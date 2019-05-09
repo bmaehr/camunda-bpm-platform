@@ -66,6 +66,7 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
             if(isPropagedException()) {
               ActivityExecution activityExecution = (ActivityExecution)execution;
               try {
+                resetListeners(execution);
                 ExceptionHandler.propagateException(activityExecution, ex);
                 shouldContinueListenerExecution = false;
               } catch (ErrorPropagationException e) {
@@ -74,9 +75,7 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
                 // and set as cause of the failure
                 throw ex;
               }
-
-            }
-            else {
+            } else {
               throw ex;
             }
           }
@@ -85,12 +84,14 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
         } catch (Exception e) {
           throw new PvmException("couldn't execute event listener : "+e.getMessage(), e);
         }
-        if(shouldContinueListenerExecution) {
+        if(shouldContinueListenerExecution /*&& execution.getListenerIndex()!=0*/) {
           execution.performOperationSync(this);
         }
 
       } else {
         resetListeners(execution);
+
+        eventNotificationsCompleted(execution);
       }
 
     } else {
@@ -103,8 +104,6 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
     execution.setListenerIndex(0);
     execution.setEventName(null);
     execution.setEventSource(null);
-
-    eventNotificationsCompleted(execution);
   }
 
   protected List<DelegateListener<? extends BaseDelegateExecution>> getListeners(CoreModelElement scope, T execution) {

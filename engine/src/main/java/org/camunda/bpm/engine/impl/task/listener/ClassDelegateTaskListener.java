@@ -73,11 +73,14 @@ public class ClassDelegateTaskListener extends ClassDelegate implements TaskList
     }
   }
   protected void executeWithErrorPropagation(ActivityExecution execution, String eventName, Callable<Void> toExecute) throws Exception {
-    String activityInstanceId = execution.getActivityInstanceId();
+    String activityInstanceId = null;
+    if (execution != null) {
+      activityInstanceId = execution.getActivityInstanceId();
+    }
     try {
       toExecute.call();
     } catch (Exception ex) {
-      if (activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE) ) {
+      if (activityInstanceId!= null && activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE) ) {
 
         try {
           ExceptionHandler.propagateException(execution, ex);

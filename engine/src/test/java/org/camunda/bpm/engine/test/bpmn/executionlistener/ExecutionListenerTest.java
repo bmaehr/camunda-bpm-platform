@@ -720,8 +720,14 @@ public class ExecutionListenerTest {
 
     // then
     // TODO verify for something else? but what?
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    Task afterCatch = taskService.createTaskQuery().singleResult();
+    assertNotNull(afterCatch);
+    assertEquals("afterCatch", afterCatch.getName());
+
+    // and completing this task ends the process instance
+    taskService.complete(afterCatch.getId());
+
+    assertEquals(0, runtimeService.createExecutionQuery().count());
   }
 
   @Test

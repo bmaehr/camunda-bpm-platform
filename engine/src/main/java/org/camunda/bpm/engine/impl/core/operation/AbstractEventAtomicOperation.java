@@ -84,7 +84,7 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
         } catch (Exception e) {
           throw new PvmException("couldn't execute event listener : "+e.getMessage(), e);
         }
-        if(shouldContinueListenerExecution /*&& execution.getListenerIndex()!=0*/) {
+        if(shouldContinueListenerExecution) {
           execution.performOperationSync(this);
         }
 

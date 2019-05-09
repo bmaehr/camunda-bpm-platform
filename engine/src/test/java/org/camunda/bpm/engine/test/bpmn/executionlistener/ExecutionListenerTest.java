@@ -99,6 +99,12 @@ public class ExecutionListenerTest {
     managementService = processEngineRule.getManagementService();
   }
 
+  @Before
+  public void resetListener()
+  {
+    ThrowBPMNErrorDelegate.reset();
+  }
+
   public void assertProcessEnded(final String processInstanceId) {
     ProcessInstance processInstance = runtimeService
             .createProcessInstanceQuery()
@@ -580,6 +586,7 @@ public class ExecutionListenerTest {
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
     System.out.println("ds");
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -592,6 +599,7 @@ public class ExecutionListenerTest {
 
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -606,6 +614,7 @@ public class ExecutionListenerTest {
 
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -738,8 +747,32 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowUncaughtBpmnErrorFromEndListenerShouldNotTriggerListenerAgain() {
-    fail("BPMN error from end listener that is not caught should not trigger end listener again => infinite loop"
-        + "however, it must be possible that the token ends in this case, i.e. that higher scopes are cleaned up");
+
+    // given
+    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
+        .startEvent()
+        .userTask("userTask1")
+        .serviceTask("throw")
+          .camundaExpression("${true}")
+          .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
+        .endEvent()
+        .done();
+
+    testHelper.deploy(model);
+
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when
+    taskService.complete(task.getId());
+
+    // then
+
+    // the process has ended, because the error was not caught
+    assertEquals(0, runtimeService.createExecutionQuery().count());
+
+    // the listener was only called once
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -1036,9 +1069,17 @@ public class ExecutionListenerTest {
 
   public static class ThrowBPMNErrorDelegate implements JavaDelegate {
 
+    public static int INVOCATIONS = 0;
+
     @Override
     public void execute(DelegateExecution execution) throws Exception {
+      INVOCATIONS++;
       throw new BpmnError(ERROR_CODE, "business error");
+    }
+
+    public static void reset()
+    {
+      INVOCATIONS = 0;
     }
   }
 

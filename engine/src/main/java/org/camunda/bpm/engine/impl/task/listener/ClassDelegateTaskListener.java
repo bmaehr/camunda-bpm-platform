@@ -27,6 +27,7 @@ import org.camunda.bpm.engine.delegate.TaskListener;
 import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.bpmn.parser.FieldDeclaration;
 import org.camunda.bpm.engine.impl.context.Context;
+import org.camunda.bpm.engine.impl.core.CoreLogger;
 import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.delegate.ClassDelegate;
 import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
@@ -38,6 +39,8 @@ import org.camunda.bpm.engine.impl.task.delegate.TaskListenerInvocation;
  */
 public class ClassDelegateTaskListener extends ClassDelegate implements TaskListener {
 
+  private final static CoreLogger LOG = CoreLogger.CORE_LOGGER;
+
   public ClassDelegateTaskListener(String className, List<FieldDeclaration> fieldDeclarations) {
     super(className, fieldDeclarations);
   }
@@ -48,14 +51,6 @@ public class ClassDelegateTaskListener extends ClassDelegate implements TaskList
 
   public void notify(DelegateTask delegateTask) {
     final TaskListener taskListenerInstance = getTaskListenerInstance();
-//    try {
-//      Context.getProcessEngineConfiguration()
-//        .getDelegateInterceptor()
-//        .handleInvocation(new TaskListenerInvocation(taskListenerInstance, delegateTask));
-//
-//    }catch (Exception e) {
-//      throw new ProcessEngineException("Exception while invoking TaskListener: "+e.getMessage(), e);
-//    }
     final DelegateTask task = delegateTask;
     ActivityExecution execution = (ActivityExecution) delegateTask.getExecution();
     try {
@@ -80,13 +75,12 @@ public class ClassDelegateTaskListener extends ClassDelegate implements TaskList
     try {
       toExecute.call();
     } catch (Exception ex) {
-      if (activityInstanceId!= null && activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE) ) {
-
+      if (activityInstanceId != null && activityInstanceId.equals(execution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
         try {
           ExceptionHandler.propagateException(execution, ex);
         }
         catch (ErrorPropagationException e) {
-//          LOG.errorPropagationException(activityInstanceId, e.getCause());
+          LOG.errorPropagationException(activityInstanceId, e.getCause());
           // re-throw the original exception so that it is logged
           // and set as cause of the failure
           throw ex;

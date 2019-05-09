@@ -35,6 +35,8 @@ import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.camunda.CamundaExecutionListener;
 import org.camunda.bpm.engine.history.HistoricVariableInstance;
 import org.camunda.bpm.engine.history.HistoricVariableInstanceQuery;
+import org.camunda.bpm.engine.repository.DeploymentWithDefinitions;
+import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.task.Task;
@@ -53,6 +55,7 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -71,6 +74,9 @@ public class ExecutionListenerTest {
   protected static final String PROCESS_KEY = "Process";
   public ProcessEngineRule processEngineRule = new ProvidedProcessEngineRule();
   public ProcessEngineTestRule testHelper = new ProcessEngineTestRule(processEngineRule);
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Rule
   public RuleChain ruleChain = RuleChain.outerRule(processEngineRule).around(testHelper);
@@ -819,7 +825,7 @@ public class ExecutionListenerTest {
         .endEvent()
         .done();
 
-    testHelper.deploy(model);
+    DeploymentWithDefinitions deployment = testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
     taskService.complete(task.getId());
@@ -828,11 +834,16 @@ public class ExecutionListenerTest {
     assertEquals("taskWithListener", taskService.createTaskQuery().singleResult().getName());
 
     // when
-    runtimeService.correlateMessage("foo"); //TODO
+    try {
+      runtimeService.correlateMessage("foo");
+      fail("Expected exception");
+    } catch (Exception e) {
+      // then
+      assertTrue(e.getMessage().contains("business error"));
+    }
 
-    // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    // cleanup
+    processEngineRule.getRepositoryService().deleteDeployment(deployment.getId(), true, true);
   }
 
   @Test
@@ -853,7 +864,8 @@ public class ExecutionListenerTest {
         .endEvent()
         .done();
 
-        testHelper.deploy(model);
+    testHelper.deploy(model);
+
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
     taskService.complete(task.getId());
@@ -926,6 +938,42 @@ public class ExecutionListenerTest {
 
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
+
+  @Test
+  public void testThrowBpmnErrorInStartListenerOnModification() {
+    // expect
+    thrown.expect(BpmnError.class);
+    thrown.expectMessage("business error");
+
+    // given
+    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
+        .startEvent()
+        .userTask("userTask1")
+        .subProcess("sub")
+          .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_START, ThrowBPMNErrorDelegate.class.getName())
+          .embeddedSubProcess()
+          .startEvent("inSub")
+          .serviceTask("throw")
+            .camundaExpression("${true}")
+          .boundaryEvent("errorEvent1")
+          .error(ERROR_CODE)
+          .subProcessDone()
+        .boundaryEvent("errorEvent2")
+        .error(ERROR_CODE)
+        .userTask("afterCatch")
+        .endEvent("endEvent")
+        .moveToActivity("sub")
+        .userTask("afterSub")
+        .endEvent()
+        .done();
+    DeploymentWithDefinitions deployment = testHelper.deploy(model);
+    ProcessDefinition definition = deployment.getDeployedProcessDefinitions().get(0);
+
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+
+    // when
+    runtimeService.createModification(definition.getId()).startBeforeActivity("throw").processInstanceIds(processInstance.getId()).execute();
   }
 
   protected BpmnModelInstance createModelWithCatchInServiceTaskAndListener(String eventName) {

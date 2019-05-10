@@ -619,7 +619,6 @@ public class TaskListenerTest {
     return Bpmn.createExecutableProcess("process")
         .startEvent()
         .userTask("mainTask")
-          .camundaTaskListenerExpression("", "")
           .camundaTaskListenerClass(eventName, ThrowBPMNErrorListener.class.getName())
           .camundaTaskListenerClass(TaskListener.EVENTNAME_DELETE, DeleteListener.class.getName())
         .boundaryEvent("throw")

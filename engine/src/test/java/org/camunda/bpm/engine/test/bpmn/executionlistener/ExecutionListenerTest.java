@@ -563,6 +563,39 @@ public class ExecutionListenerTest {
   }
 
   @Test
+  public void testThrowBpmnErrorInStartExpressionListenerAndEventSubprocessWithCatch() {
+    // given
+    processEngineRule.getProcessEngineConfiguration().getBeans().put("myListener", new ThrowBPMNErrorDelegate());
+
+    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
+    BpmnModelInstance model = processBuilder
+        .startEvent()
+        .userTask("userTask1")
+        .serviceTask("throw")
+          .camundaExecutionListenerExpression(ExecutionListener.EVENTNAME_START, "${myListener.execute(execution)}")
+          .camundaExpression("${true}")
+        .userTask("afterService")
+        .endEvent()
+        .done();
+    processBuilder.eventSubProcess()
+       .startEvent("errorEvent").error(ERROR_CODE)
+         .userTask("afterCatch")
+       .endEvent();
+
+    testHelper.deploy(model);
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+
+    // when
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    taskService.complete(task.getId());
+
+    // then
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+  }
+
+  @Test
   public void testThrowBpmnErrorInStartListenerAndEventSubprocessWithCatch() {
     BpmnModelInstance model = createModelWithCatchInEventSubprocessAndListener(ExecutionListener.EVENTNAME_START);
 
@@ -599,6 +632,17 @@ public class ExecutionListenerTest {
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+  }
+
+  @Test
+  @Deployment
+  public void testThrowBpmnErrorInEndScriptListenerAndSubprocessWithCatch() {
+    // when
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+
+    // then
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
   }
 
   @Test

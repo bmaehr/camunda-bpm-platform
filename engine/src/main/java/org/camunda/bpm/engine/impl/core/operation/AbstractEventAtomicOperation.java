@@ -63,6 +63,8 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
           try {
             execution.invokeListener(listener);
           } catch (Exception ex) {
+            eventNotificationsFailed(execution);
+
             if(isPropagedException()) {
               ActivityExecution activityExecution = (ActivityExecution)execution;
               try {
@@ -126,6 +128,12 @@ public abstract class AbstractEventAtomicOperation<T extends CoreExecution> impl
   protected abstract CoreModelElement getScope(T execution);
   protected abstract String getEventName();
   protected abstract void eventNotificationsCompleted(T execution);
+
+  // TODO: make abstract and override where appropriate
+  // TODO: could add exception as parameter
+  protected void eventNotificationsFailed(T execution) {
+
+  }
 
   public boolean isPropagedException() {
     return isPropagedException;

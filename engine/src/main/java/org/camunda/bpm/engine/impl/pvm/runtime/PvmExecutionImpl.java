@@ -136,6 +136,8 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
    */
   protected int activityInstanceState = ActivityInstanceState.DEFAULT.getStateCode();
 
+  protected boolean activityInstanceEndListenersFailed = false;
+
   // sequence counter ////////////////////////////////////////////////////////
   protected long sequenceCounter = 0;
 
@@ -351,6 +353,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     }
 
     performOperation(PvmAtomicOperation.ACTIVITY_NOTIFY_LISTENER_END);
+
   }
 
   @Override
@@ -1237,6 +1240,8 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
       initializeTimerDeclarations();
     }
 
+    activityInstanceEndListenersFailed = false;
+
   }
 
   public void activityInstanceStarting() {
@@ -1252,6 +1257,11 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     this.activityInstanceState = ENDING.getStateCode();
   }
 
+  public void activityInstanceEndListenerFailure()
+  {
+    this.activityInstanceEndListenersFailed = true;
+  }
+
   protected abstract String generateActivityInstanceId(String activityId);
 
   @Override
@@ -1262,6 +1272,7 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     activityInstanceId = getParentActivityInstanceId();
 
     activityInstanceState = ActivityInstanceState.DEFAULT.getStateCode();
+    activityInstanceEndListenersFailed = false;
   }
 
   @Override
@@ -1783,6 +1794,11 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
 
   public boolean isInState(ActivityInstanceState state) {
     return activityInstanceState == state.getStateCode();
+  }
+
+  public boolean hasFailedOnEndListeners()
+  {
+    return activityInstanceEndListenersFailed;
   }
 
   public boolean isEventScope() {

@@ -585,7 +585,6 @@ public class ExecutionListenerTest {
 
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    System.out.println("ds");
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
@@ -710,7 +709,7 @@ public class ExecutionListenerTest {
   }
 
   @Test
-  public void testThrowBpmnErrorInEndListenerOfLastEventAndEventProcessWithCatch() {// TODO is it valid what about the execution tree?
+  public void testThrowBpmnErrorInEndListenerOfLastEventAndEventProcessWithCatch() {
     // given
     ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
     BpmnModelInstance model = processBuilder
@@ -734,7 +733,6 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    // TODO verify for something else? but what?
     Task afterCatch = taskService.createTaskQuery().singleResult();
     assertNotNull(afterCatch);
     assertEquals("afterCatch", afterCatch.getName());
@@ -873,6 +871,7 @@ public class ExecutionListenerTest {
     } catch (Exception e) {
       // then
       assertTrue(e.getMessage().contains("business error"));
+      assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
     }
 
     // cleanup

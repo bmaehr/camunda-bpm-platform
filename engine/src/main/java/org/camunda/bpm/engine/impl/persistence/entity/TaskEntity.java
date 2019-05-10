@@ -142,6 +142,8 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
   protected String eventName;
   protected boolean isFormKeyInitialized = false;
   protected String formKey;
+  
+  protected boolean shouldContinueListenerExecution = true;
 
   @SuppressWarnings({ "unchecked" })
   protected transient VariableStore<VariableInstanceEntity> variableStore
@@ -304,6 +306,8 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     // ensure the the Task is not suspended
     ensureTaskActive();
 
+    String activityInstanceId = getExecution().getActivityInstanceId();
+
     // trigger TaskListener.complete event
     fireEvent(TaskListener.EVENTNAME_COMPLETE);
 
@@ -315,9 +319,10 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
 
     // if the task is associated with a
     // execution (and not a case execution)
+    // and it's still in the same activity
     // then call signal an the associated
     // execution.
-    if (executionId!=null) {
+    if (executionId!=null && activityInstanceId.equals(getExecution().getActivityInstanceId())) {
       ExecutionEntity execution = getExecution();
       execution.removeTask(this);
       execution.signal(null, null);
@@ -961,15 +966,17 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
         }
         try {
           final TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, execution);
-          executeWithErrorPropagation(execution, taskEventName, new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-              Context.getProcessEngineConfiguration()
-                .getDelegateInterceptor()
-                .handleInvocation(listenerInvocation);
-              return null;
-            }
-          });
+          if (shouldContinueListenerExecution) {
+            executeWithErrorPropagation(execution, taskEventName, new Callable<Void>() {
+              @Override
+              public Void call() throws Exception {
+                Context.getProcessEngineConfiguration()
+                  .getDelegateInterceptor()
+                  .handleInvocation(listenerInvocation);
+                return null;
+              }
+            });
+          }
         } catch (Exception e) {
           throw LOG.invokeTaskListenerException(e);
         }
@@ -990,16 +997,15 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     } catch (Exception ex) {
       if (activityInstanceId != null && activityInstanceId.equals(activityExecution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
         try {
+          shouldContinueListenerExecution = false;
           ExceptionHandler.propagateException(activityExecution, ex);
         }
         catch (ErrorPropagationException e) {
-          // TODO
-//          LOG.errorPropagationException(activityInstanceId, e.getCause());
+          ProcessEngineLogger.CORE_LOGGER.errorPropagationException(activityInstanceId, e.getCause());
           // re-throw the original exception so that it is logged
           // and set as cause of the failure
           throw ex;
         }
-
       }
       else {
         throw ex;

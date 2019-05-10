@@ -17,7 +17,6 @@
 package org.camunda.bpm.engine.test.bpmn.tasklistener;
 
 import static org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl.HISTORYLEVEL_AUDIT;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -27,7 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.camunda.bpm.engine.HistoryService;
-import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.delegate.BpmnError;
@@ -35,6 +33,7 @@ import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.TaskListener;
 import org.camunda.bpm.engine.history.HistoricVariableInstance;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.camunda.bpm.engine.repository.DeploymentWithDefinitions;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.task.Task;
 import org.camunda.bpm.engine.test.Deployment;
@@ -50,10 +49,8 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.builder.ProcessBuilder;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
 
 
@@ -65,9 +62,6 @@ public class TaskListenerTest {
   public static final String ERROR_CODE = "208";
   public ProvidedProcessEngineRule engineRule = new ProvidedProcessEngineRule();
   public ProcessEngineTestRule testRule = new ProcessEngineTestRule(engineRule);
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Rule
   public RuleChain ruleChain = RuleChain.outerRule(engineRule).around(testRule);
@@ -83,6 +77,9 @@ public class TaskListenerTest {
     taskService = engineRule.getTaskService();
     historyService = engineRule.getHistoryService();
     processEngineConfiguration = engineRule.getProcessEngineConfiguration();
+
+    ThrowBPMNErrorListener.reset();
+    DeleteListener.reset();
   }
 
   @Test
@@ -402,11 +399,9 @@ public class TaskListenerTest {
 
     // when
     runtimeService.startProcessInstanceByKey("process");
-    
+
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -416,7 +411,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -425,9 +420,7 @@ public class TaskListenerTest {
     engineRule.getTaskService().saveTask(firstTask);
 
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -437,7 +430,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -445,26 +438,29 @@ public class TaskListenerTest {
     taskService.complete(firstTask.getId());
 
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
-  @Ignore
   public void testDeleteAndCatchOnUserTask() {
-    // expect
-    thrown.expect(ProcessEngineException.class);
-    thrown.expectMessage(containsString("There was an exception while invoking the TaskListener"));
-    
     // given
     BpmnModelInstance model = createModelThrowErrorInListenerAndCatchOnUserTask(TaskListener.EVENTNAME_DELETE);
 
-    testRule.deploy(model);
+    DeploymentWithDefinitions deployment = testRule.deploy(model);
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("process");
-    
+
     // when
-    runtimeService.deleteProcessInstance(processInstance.getId(), "invoke delete listener");
+    try {
+      runtimeService.deleteProcessInstance(processInstance.getId(), "invoke delete listener");
+    } catch (Exception e) {
+      // then
+      assertTrue(e.getMessage().contains("business error"));
+      assertEquals(1, ThrowBPMNErrorListener.INVOCATIONS);
+      assertEquals(0, DeleteListener.INVOCATIONS);
+    }
+
+    // cleanup
+    engineRule.getRepositoryService().deleteDeployment(deployment.getId(), true, true);
   }
 
   @Test
@@ -476,11 +472,9 @@ public class TaskListenerTest {
 
     // when
     runtimeService.startProcessInstanceByKey("process");
-    
+
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -490,7 +484,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -499,9 +493,7 @@ public class TaskListenerTest {
     engineRule.getTaskService().saveTask(firstTask);
 
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -511,7 +503,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -519,11 +511,8 @@ public class TaskListenerTest {
     taskService.complete(firstTask.getId());
 
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
-
 
   @Test
   public void testCreateAndCatchOnEventSubprocess() {
@@ -534,11 +523,9 @@ public class TaskListenerTest {
 
     // when
     runtimeService.startProcessInstanceByKey("process");
-    
+
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -548,7 +535,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -557,9 +544,7 @@ public class TaskListenerTest {
     engineRule.getTaskService().saveTask(firstTask);
 
     // then
-    Task resultTask = taskService.createTaskQuery().singleResult();
-    assertNotNull(resultTask);
-    assertEquals("afterCatch", resultTask.getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -569,7 +554,7 @@ public class TaskListenerTest {
 
     testRule.deploy(model);
     runtimeService.startProcessInstanceByKey("process");
-    
+
     Task firstTask = taskService.createTaskQuery().singleResult();
     assertNotNull(firstTask);
 
@@ -577,9 +562,15 @@ public class TaskListenerTest {
     taskService.complete(firstTask.getId());
 
     // then
+    verifyErrorGotCaught();
+  }
+
+  protected void verifyErrorGotCaught() {
     Task resultTask = taskService.createTaskQuery().singleResult();
     assertNotNull(resultTask);
     assertEquals("afterCatch", resultTask.getName());
+    assertEquals(1, ThrowBPMNErrorListener.INVOCATIONS);
+    assertEquals(0, DeleteListener.INVOCATIONS);
   }
 
   protected BpmnModelInstance createModelThrowErrorInListenerAndCatchOnUserTask(String eventName) {
@@ -587,6 +578,7 @@ public class TaskListenerTest {
         .startEvent()
         .userTask("mainTask")
           .camundaTaskListenerClass(eventName, ThrowBPMNErrorListener.class.getName())
+          .camundaTaskListenerClass(TaskListener.EVENTNAME_DELETE, DeleteListener.class.getName())
         .boundaryEvent("throw")
         .error(ERROR_CODE)
         .userTask("afterCatch")
@@ -604,6 +596,7 @@ public class TaskListenerTest {
           .startEvent("inSub")
           .userTask("mainTask")
             .camundaTaskListenerClass(eventName, ThrowBPMNErrorListener.class.getName())
+            .camundaTaskListenerClass(TaskListener.EVENTNAME_DELETE, DeleteListener.class.getName())
           .userTask("afterThrow")
           .endEvent()
         .moveToActivity("sub")
@@ -619,7 +612,8 @@ public class TaskListenerTest {
     BpmnModelInstance model = processBuilder
         .startEvent()
         .userTask("mainTask")
-        .camundaTaskListenerClass(eventName, ThrowBPMNErrorListener.class.getName())
+          .camundaTaskListenerClass(eventName, ThrowBPMNErrorListener.class.getName())
+          .camundaTaskListenerClass(TaskListener.EVENTNAME_DELETE, DeleteListener.class.getName())
         .userTask("afterThrow")
         .endEvent()
         .done();
@@ -671,18 +665,27 @@ public class TaskListenerTest {
   }
 
   public static class ThrowBPMNErrorListener implements TaskListener {
-    public static int eventCounter = 0;
-    public static String lastDeleteReason = null;
+    public static int INVOCATIONS = 0;
 
     public void notify(DelegateTask delegateTask) {
-      eventCounter++;
-      lastDeleteReason = delegateTask.getDeleteReason();
+      INVOCATIONS++;
       throw new BpmnError(ERROR_CODE, "business error 208");
     }
 
-    public static void clear() {
-      eventCounter = 0;
-      lastDeleteReason = null;
+    public static void reset() {
+      INVOCATIONS = 0;
+    }
+  }
+
+  public static class DeleteListener implements TaskListener {
+    public static int INVOCATIONS = 0;
+
+    public void notify(DelegateTask delegateTask) {
+      INVOCATIONS++;
+    }
+
+    public static void reset() {
+      INVOCATIONS = 0;
     }
   }
 }

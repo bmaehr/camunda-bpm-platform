@@ -95,7 +95,7 @@ public class AbstractBpmnActivityBehavior extends FlowNodeActivityBehavior {
           ExceptionHandler.propagateException(execution, ex);
         }
         catch (ErrorPropagationException e) {
-          LOG.errorPropagationException(activityInstanceId, e.getCause());
+          // exception has been logged by thrower
           // re-throw the original exception so that it is logged
           // and set as cause of the failure
           throw ex;

@@ -81,12 +81,4 @@ public class CoreLogger extends ProcessEngineLogger {
       ));
   }
 
-  public void errorPropagationException(String activityId, Throwable cause) {
-    logError(
-        "008",
-        "Caught an exception while propagate error in activity with id '{}'",
-        activityId,
-        cause);
-  }
-
 }

@@ -116,6 +116,8 @@ public class ExceptionHandler {
       });
 
     } catch(Exception e) {
+      LOG.errorPropagationException(execution.getActivityInstanceId(), e);
+
       // separate the exception handling to support a fail-safe error propagation
       throw new ErrorPropagationException(e.getCause());
     }

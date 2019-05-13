@@ -612,7 +612,7 @@ public class TaskListenerTest {
     assertNotNull(resultTask);
     assertEquals("afterCatch", resultTask.getName());
     assertEquals(1, ThrowBPMNErrorListener.INVOCATIONS);
-    assertEquals(0, DeleteListener.INVOCATIONS);
+    assertEquals(1, DeleteListener.INVOCATIONS);
   }
 
   protected BpmnModelInstance createModelThrowErrorInListenerAndCatchOnUserTask(String eventName) {

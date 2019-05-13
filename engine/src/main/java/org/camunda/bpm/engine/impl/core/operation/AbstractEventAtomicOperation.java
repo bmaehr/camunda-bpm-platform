@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.camunda.bpm.engine.delegate.BaseDelegateExecution;
 import org.camunda.bpm.engine.delegate.DelegateListener;
-import org.camunda.bpm.engine.impl.core.CoreLogger;
 import org.camunda.bpm.engine.impl.core.instance.CoreExecution;
 import org.camunda.bpm.engine.impl.core.model.CoreModelElement;
 import org.camunda.bpm.engine.impl.pvm.PvmException;
@@ -30,8 +29,6 @@ import org.camunda.bpm.engine.impl.pvm.PvmException;
  * @author Tom Baeyens
  */
 public abstract class AbstractEventAtomicOperation<T extends CoreExecution> implements CoreAtomicOperation<T> {
-
-  protected final static CoreLogger LOG = CoreLogger.CORE_LOGGER;
 
   public boolean isAsync(T execution) {
     return false;

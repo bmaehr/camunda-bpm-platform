@@ -74,7 +74,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import static org.camunda.bpm.engine.delegate.TaskListener.EVENTNAME_DELETE;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
@@ -114,7 +113,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
   protected String tenantId;
 
   protected boolean isIdentityLinksInitialized = false;
-  protected transient List<IdentityLinkEntity> taskIdentityLinkEntities = new ArrayList<IdentityLinkEntity>();
+  protected transient List<IdentityLinkEntity> taskIdentityLinkEntities = new ArrayList<>();
 
   // execution
   protected String executionId;
@@ -142,12 +141,10 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
   protected String eventName;
   protected boolean isFormKeyInitialized = false;
   protected String formKey;
-  
-  protected boolean shouldContinueListenerExecution = true;
 
   @SuppressWarnings({ "unchecked" })
   protected transient VariableStore<VariableInstanceEntity> variableStore
-    = new VariableStore<VariableInstanceEntity>(this, new TaskEntityReferencer(this));
+    = new VariableStore<>(this, new TaskEntityReferencer(this));
 
 
   protected transient boolean skipCustomListeners = false;
@@ -155,9 +152,9 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
   /**
    * contains all changed properties of this entity
    */
-  protected transient Map<String, PropertyChange> propertyChanges = new HashMap<String, PropertyChange>();
+  protected transient Map<String, PropertyChange> propertyChanges = new HashMap<>();
 
-  protected transient List<PropertyChange> identityLinkChanges = new ArrayList<PropertyChange>();
+  protected transient List<PropertyChange> identityLinkChanges = new ArrayList<>();
 
   // name references of tracked properties
   public static final String ASSIGNEE = "assignee";
@@ -306,29 +303,27 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     // ensure the the Task is not suspended
     ensureTaskActive();
 
-    String activityInstanceId = null;
-    if (getExecution() != null) {
-      activityInstanceId = getExecution().getActivityInstanceId();
-    }
-
     // trigger TaskListener.complete event
-    fireEvent(TaskListener.EVENTNAME_COMPLETE);
+    final boolean listenersSuccessful = fireEvent(TaskListener.EVENTNAME_COMPLETE);
 
-    // delete the task
-    Context
+    if (listenersSuccessful)
+    {
+      // delete the task
+      Context
       .getCommandContext()
       .getTaskManager()
       .deleteTask(this, TaskEntity.DELETE_REASON_COMPLETED, false, skipCustomListeners);
 
-    // if the task is associated with a
-    // execution (and not a case execution)
-    // and it's still in the same activity
-    // then call signal an the associated
-    // execution.
-    if (executionId !=null && activityInstanceId.equals(getExecution().getActivityInstanceId())) {
-      ExecutionEntity execution = getExecution();
-      execution.removeTask(this);
-      execution.signal(null, null);
+      // if the task is associated with a
+      // execution (and not a case execution)
+      // and it's still in the same activity
+      // then call signal an the associated
+      // execution.
+      if (executionId !=null) {
+        ExecutionEntity execution = getExecution();
+        execution.removeTask(this);
+        execution.signal(null, null);
+      }
     }
   }
 
@@ -382,7 +377,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
 
   @Override
   public Object getPersistentState() {
-    Map<String, Object> persistentState = new  HashMap<String, Object>();
+    Map<String, Object> persistentState = new  HashMap<>();
     persistentState.put("assignee", this.assignee);
     persistentState.put("owner", this.owner);
     persistentState.put("name", this.name);
@@ -731,7 +726,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
 
   @Override
   public Set<IdentityLink> getCandidates() {
-    Set<IdentityLink> potentialOwners = new HashSet<IdentityLink>();
+    Set<IdentityLink> potentialOwners = new HashSet<>();
     for (IdentityLinkEntity identityLinkEntity : getIdentityLinks()) {
       if (IdentityLinkType.CANDIDATE.equals(identityLinkEntity.getType())) {
         potentialOwners.add(identityLinkEntity);
@@ -953,7 +948,12 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     this.taskDefinitionKey = taskDefinitionKey;
   }
 
-  public void fireEvent(String taskEventName) {
+  /**
+   * @return true if invoking the listener was successful;
+   *   if not successful, either false is returned (case: BPMN error propagation)
+   *   or an exception is thrown
+   */
+  public boolean fireEvent(String taskEventName) {
 
     List<TaskListener> taskEventListeners = getListenersForEvent(taskEventName);
 
@@ -968,43 +968,40 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
           setEventName(taskEventName);
         }
         try {
-          final TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, execution);
-          if (shouldContinueListenerExecution) {
-            executeWithErrorPropagation(execution, taskEventName, new Callable<Void>() {
-              @Override
-              public Void call() throws Exception {
-                Context.getProcessEngineConfiguration()
-                  .getDelegateInterceptor()
-                  .handleInvocation(listenerInvocation);
-                return null;
-              }
-            });
+          boolean success = invokeListener(execution, taskEventName, taskListener);
+          if (!success)
+          {
+            return false;
           }
         } catch (Exception e) {
           throw LOG.invokeTaskListenerException(e);
         }
       }
     }
+
+    return true;
   }
 
-  protected void executeWithErrorPropagation(CoreExecution currentExecution, String eventName, Callable<Void> toExecute) throws Exception {
-    // TODO cleanup
-    String activityInstanceId = null;
-    ActivityExecution activityExecution = null;
-    if (currentExecution instanceof ActivityExecution && currentExecution != null) {
-      activityExecution = (ActivityExecution) currentExecution;
-      activityInstanceId = activityExecution.getActivityInstanceId();
-    }
+  /**
+   * @return true if the next listener can be invoked; false if not
+   */
+  protected boolean invokeListener(CoreExecution currentExecution, String eventName, TaskListener taskListener) throws Exception {
+    boolean isBpmnTask = currentExecution instanceof ActivityExecution && currentExecution != null;
+    final TaskListenerInvocation listenerInvocation = new TaskListenerInvocation(taskListener, this, currentExecution);
+
     try {
-      toExecute.call();
+      Context.getProcessEngineConfiguration()
+        .getDelegateInterceptor()
+        .handleInvocation(listenerInvocation);
     } catch (Exception ex) {
-      if (activityInstanceId != null && activityInstanceId.equals(activityExecution.getActivityInstanceId()) && !eventName.equals(EVENTNAME_DELETE)) {
+      // exceptions on delete events are never handled as BPMN errors
+      if (isBpmnTask && !eventName.equals(EVENTNAME_DELETE)) {
         try {
-          shouldContinueListenerExecution = false;
-          ExceptionHandler.propagateException(activityExecution, ex);
+          ExceptionHandler.propagateException((ActivityExecution) currentExecution, ex);
+          return false;
         }
         catch (ErrorPropagationException e) {
-          ProcessEngineLogger.CORE_LOGGER.errorPropagationException(activityInstanceId, e.getCause());
+          // exception has been logged by thrower
           // re-throw the original exception so that it is logged
           // and set as cause of the failure
           throw ex;
@@ -1014,6 +1011,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
         throw ex;
       }
     }
+    return true;
   }
 
   protected List<TaskListener> getListenersForEvent(String event) {
@@ -1465,7 +1463,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
   public void createHistoricTaskDetails(String operation) {
     final CommandContext commandContext = Context.getCommandContext();
     if (commandContext != null) {
-      List<PropertyChange> values = new ArrayList<PropertyChange>(propertyChanges.values());
+      List<PropertyChange> values = new ArrayList<>(propertyChanges.values());
       commandContext.getOperationLogManager().logTaskOperations(operation, this, values);
       fireHistoricIdentityLinks();
       propertyChanges.clear();
@@ -1542,13 +1540,13 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
 
   @Override
   public Set<String> getReferencedEntityIds() {
-    Set<String> referencedEntityIds = new HashSet<String>();
+    Set<String> referencedEntityIds = new HashSet<>();
     return referencedEntityIds;
   }
 
   @Override
   public Map<String, Class> getReferencedEntitiesIdAndClass() {
-    Map<String, Class> referenceIdAndClass = new HashMap<String, Class>();
+    Map<String, Class> referenceIdAndClass = new HashMap<>();
 
     if (processDefinitionId != null) {
       referenceIdAndClass.put(processDefinitionId, ProcessDefinitionEntity.class);

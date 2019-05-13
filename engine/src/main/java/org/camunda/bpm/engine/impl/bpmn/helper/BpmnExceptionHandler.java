@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.bpm.engine.impl.core;
+package org.camunda.bpm.engine.impl.bpmn.helper;
 
 import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.delegate.BpmnError;
@@ -33,7 +33,7 @@ import org.camunda.bpm.engine.impl.tree.OutputVariablesPropagator;
 import org.camunda.bpm.engine.impl.tree.ReferenceWalker;
 
 // TODO javadoc
-public class ExceptionHandler {
+public class BpmnExceptionHandler {
 
   private final static BpmnBehaviorLogger LOG = ProcessEngineLogger.BPMN_BEHAVIOR_LOGGER;
 

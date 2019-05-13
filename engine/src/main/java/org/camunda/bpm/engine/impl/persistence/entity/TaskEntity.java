@@ -16,6 +16,21 @@
  */
 package org.camunda.bpm.engine.impl.persistence.entity;
 
+import static org.camunda.bpm.engine.delegate.TaskListener.EVENTNAME_DELETE;
+import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.ProcessEngineServices;
 import org.camunda.bpm.engine.delegate.DelegateCaseExecution;
@@ -26,12 +41,12 @@ import org.camunda.bpm.engine.delegate.VariableScope;
 import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.exception.NullValueException;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
+import org.camunda.bpm.engine.impl.bpmn.helper.BpmnExceptionHandler;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cfg.auth.ResourceAuthorizationProvider;
 import org.camunda.bpm.engine.impl.cmmn.entity.repository.CaseDefinitionEntity;
 import org.camunda.bpm.engine.impl.cmmn.entity.runtime.CaseExecutionEntity;
 import org.camunda.bpm.engine.impl.context.Context;
-import org.camunda.bpm.engine.impl.core.ExceptionHandler;
 import org.camunda.bpm.engine.impl.core.instance.CoreExecution;
 import org.camunda.bpm.engine.impl.core.variable.CoreVariableInstance;
 import org.camunda.bpm.engine.impl.core.variable.event.VariableEvent;
@@ -62,21 +77,6 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.UserTask;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 import org.camunda.bpm.model.xml.type.ModelElementType;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.camunda.bpm.engine.delegate.TaskListener.EVENTNAME_DELETE;
-import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 
 /**
  * @author Tom Baeyens
@@ -997,7 +997,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
       // exceptions on delete events are never handled as BPMN errors
       if (isBpmnTask && !eventName.equals(EVENTNAME_DELETE)) {
         try {
-          ExceptionHandler.propagateException((ActivityExecution) currentExecution, ex);
+          BpmnExceptionHandler.propagateException((ActivityExecution) currentExecution, ex);
           return false;
         }
         catch (ErrorPropagationException e) {

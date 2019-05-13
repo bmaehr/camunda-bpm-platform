@@ -17,7 +17,7 @@
 package org.camunda.bpm.engine.impl.pvm.runtime.operation;
 
 import org.camunda.bpm.engine.exception.ErrorPropagationException;
-import org.camunda.bpm.engine.impl.core.ExceptionHandler;
+import org.camunda.bpm.engine.impl.bpmn.helper.BpmnExceptionHandler;
 import org.camunda.bpm.engine.impl.core.model.CoreModelElement;
 import org.camunda.bpm.engine.impl.core.operation.AbstractEventAtomicOperation;
 import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
@@ -46,7 +46,7 @@ public abstract class AbstractPvmEventAtomicOperation extends AbstractEventAtomi
       ActivityExecution activityExecution = (ActivityExecution) execution;
       try {
         resetListeners(execution);
-        ExceptionHandler.propagateException(activityExecution, exception);
+        BpmnExceptionHandler.propagateException(activityExecution, exception);
       } catch (ErrorPropagationException e) {
         // exception has been logged by thrower
         // re-throw the original exception so that it is logged

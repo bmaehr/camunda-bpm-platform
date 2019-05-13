@@ -58,8 +58,4 @@ public abstract class AbstractPvmAtomicOperationTransitionNotifyListenerTake ext
     return ExecutionListener.EVENTNAME_TAKE;
   }
 
-  @Override
-  public boolean shouldHandleFailureAsBpmnError() {
-    return true;
-  }
 }

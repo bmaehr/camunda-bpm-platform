@@ -31,8 +31,6 @@ import org.camunda.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
  */
 public abstract class AbstractPvmEventAtomicOperation extends AbstractEventAtomicOperation<PvmExecutionImpl> implements PvmAtomicOperation {
 
-  protected boolean propagatesFailuresAsBpmnErrors = false;
-
   protected abstract CoreModelElement getScope(PvmExecutionImpl execution);
 
   public boolean isAsyncCapable() {
@@ -62,6 +60,6 @@ public abstract class AbstractPvmEventAtomicOperation extends AbstractEventAtomi
   }
 
   public boolean shouldHandleFailureAsBpmnError() {
-    return propagatesFailuresAsBpmnErrors;
+    return false;
   }
 }

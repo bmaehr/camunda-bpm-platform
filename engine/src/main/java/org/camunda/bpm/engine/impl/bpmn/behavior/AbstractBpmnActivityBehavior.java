@@ -20,9 +20,9 @@ import static org.camunda.bpm.engine.impl.bpmn.helper.CompensationUtil.SIGNAL_CO
 
 import java.util.concurrent.Callable;
 
-import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.bpmn.helper.BpmnExceptionHandler;
+import org.camunda.bpm.engine.impl.bpmn.helper.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.event.EventType;
 import org.camunda.bpm.engine.impl.persistence.entity.EventSubscriptionEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;

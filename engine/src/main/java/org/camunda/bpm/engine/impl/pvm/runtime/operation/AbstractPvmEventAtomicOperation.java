@@ -16,8 +16,8 @@
  */
 package org.camunda.bpm.engine.impl.pvm.runtime.operation;
 
-import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.bpmn.helper.BpmnExceptionHandler;
+import org.camunda.bpm.engine.impl.bpmn.helper.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.core.model.CoreModelElement;
 import org.camunda.bpm.engine.impl.core.operation.AbstractEventAtomicOperation;
 import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;

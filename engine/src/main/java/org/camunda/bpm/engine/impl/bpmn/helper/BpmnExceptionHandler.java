@@ -18,7 +18,6 @@ package org.camunda.bpm.engine.impl.bpmn.helper;
 
 import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.delegate.BpmnError;
-import org.camunda.bpm.engine.exception.ErrorPropagationException;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.bpmn.behavior.BpmnBehaviorLogger;
 import org.camunda.bpm.engine.impl.bpmn.parser.ErrorEventDefinition;

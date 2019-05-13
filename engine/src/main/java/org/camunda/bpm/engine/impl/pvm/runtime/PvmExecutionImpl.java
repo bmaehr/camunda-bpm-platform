@@ -41,7 +41,6 @@ import org.camunda.bpm.engine.impl.pvm.delegate.CompositeActivityBehavior;
 import org.camunda.bpm.engine.impl.pvm.delegate.ModificationObserverBehavior;
 import org.camunda.bpm.engine.impl.pvm.delegate.SignallableActivityBehavior;
 import org.camunda.bpm.engine.impl.pvm.process.*;
-import org.camunda.bpm.engine.impl.pvm.runtime.operation.FoxAtomicOperationDeleteCascadeFireActivityEnd;
 import org.camunda.bpm.engine.impl.pvm.runtime.operation.PvmAtomicOperation;
 import org.camunda.bpm.engine.impl.tree.*;
 import org.camunda.bpm.engine.impl.util.EnsureUtil;
@@ -571,13 +570,6 @@ public abstract class PvmExecutionImpl extends CoreExecution implements Activity
     this.externallyTerminated = externallyTerminated;
     this.skipSubprocesses = skipSubprocesses;
     performOperation(PvmAtomicOperation.DELETE_CASCADE);
-  }
-
-  // XXX
-  public void deleteCascade2(String deleteReason) {
-    this.deleteReason = deleteReason;
-    setDeleteRoot(true);
-    performOperation(new FoxAtomicOperationDeleteCascadeFireActivityEnd());
   }
 
   public void executeEventHandlerActivity(ActivityImpl eventHandlerActivity) {

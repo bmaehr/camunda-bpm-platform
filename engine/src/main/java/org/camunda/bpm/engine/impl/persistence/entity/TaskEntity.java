@@ -306,7 +306,10 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     // ensure the the Task is not suspended
     ensureTaskActive();
 
-    String activityInstanceId = getExecution().getActivityInstanceId();
+    String activityInstanceId = null;
+    if (getExecution() != null) {
+      activityInstanceId = getExecution().getActivityInstanceId();
+    }
 
     // trigger TaskListener.complete event
     fireEvent(TaskListener.EVENTNAME_COMPLETE);
@@ -322,7 +325,7 @@ public class TaskEntity extends AbstractVariableScope implements Task, DelegateT
     // and it's still in the same activity
     // then call signal an the associated
     // execution.
-    if (executionId!=null && activityInstanceId.equals(getExecution().getActivityInstanceId())) {
+    if (executionId !=null && activityInstanceId.equals(getExecution().getActivityInstanceId())) {
       ExecutionEntity execution = getExecution();
       execution.removeTask(this);
       execution.signal(null, null);

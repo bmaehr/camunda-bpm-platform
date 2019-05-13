@@ -550,9 +550,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -567,9 +565,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -600,9 +596,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -617,9 +611,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -634,9 +626,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -651,9 +641,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -679,9 +667,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -714,9 +700,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -740,9 +724,7 @@ public class ExecutionListenerTest {
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -774,9 +756,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -866,9 +846,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -899,8 +877,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -976,9 +953,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
     // end listener is called
     assertEquals("bar", runtimeService.createVariableInstanceQuery().variableName("foo").singleResult().getValue());
   }
@@ -1015,9 +990,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -1048,9 +1021,7 @@ public class ExecutionListenerTest {
     taskService.complete(task.getId());
 
     // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    verifyErrorGotCaught();
   }
 
   @Test
@@ -1145,6 +1116,12 @@ public class ExecutionListenerTest {
          .userTask("afterCatch")
        .endEvent();
     return model;
+  }
+
+  protected void verifyErrorGotCaught() {
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   public static class ThrowBPMNErrorDelegate implements JavaDelegate {

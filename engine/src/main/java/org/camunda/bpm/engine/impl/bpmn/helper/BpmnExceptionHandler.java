@@ -31,7 +31,9 @@ import org.camunda.bpm.engine.impl.tree.ActivityExecutionTuple;
 import org.camunda.bpm.engine.impl.tree.OutputVariablesPropagator;
 import org.camunda.bpm.engine.impl.tree.ReferenceWalker;
 
-// TODO javadoc
+/**
+ * Helper class handling the propagation of BPMN Errors.
+ */
 public class BpmnExceptionHandler {
 
   private final static BpmnBehaviorLogger LOG = ProcessEngineLogger.BPMN_BEHAVIOR_LOGGER;

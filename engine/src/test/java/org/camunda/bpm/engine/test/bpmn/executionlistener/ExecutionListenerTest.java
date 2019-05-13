@@ -540,26 +540,36 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInStartListenerServiceTaskWithCatch() {
+    // given
     BpmnModelInstance model = createModelWithCatchInServiceTaskAndListener(ExecutionListener.EVENTNAME_START);
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
   public void testThrowBpmnErrorInStartListenerAndSubprocessWithCatch() {
+    // given
     BpmnModelInstance model = createModelWithCatchInSubprocessAndListener(ExecutionListener.EVENTNAME_START);
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -585,7 +595,7 @@ public class ExecutionListenerTest {
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
 
-    // when
+    // when listeners are invoked
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
     taskService.complete(task.getId());
 
@@ -597,25 +607,33 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInStartListenerAndEventSubprocessWithCatch() {
+    // given
     BpmnModelInstance model = createModelWithCatchInEventSubprocessAndListener(ExecutionListener.EVENTNAME_START);
-
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
   public void testThrowBpmnErrorInEndListenerAndServiceTaskWithCatch() {
+    // given
     BpmnModelInstance model = createModelWithCatchInServiceTaskAndListener(ExecutionListener.EVENTNAME_END);
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
@@ -623,12 +641,16 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInEndListenerAndSubprocessWithCatch() {
+    // given
     BpmnModelInstance model = createModelWithCatchInSubprocessAndListener(ExecutionListener.EVENTNAME_END);
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
@@ -637,7 +659,7 @@ public class ExecutionListenerTest {
   @Test
   @Deployment
   public void testThrowBpmnErrorInEndScriptListenerAndSubprocessWithCatch() {
-    // when
+    // when the listeners are invoked
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
 
     // then
@@ -647,14 +669,16 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInEndListenerAndEventSubprocessWithCatch() {
-
+    // given
     BpmnModelInstance model = createModelWithCatchInEventSubprocessAndListener(ExecutionListener.EVENTNAME_END);
-
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
@@ -684,14 +708,15 @@ public class ExecutionListenerTest {
 
     testHelper.deploy(model);
 
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -711,12 +736,13 @@ public class ExecutionListenerTest {
         .endEvent();
 
     testHelper.deploy(model);
-    // when
+    // when the listeners are invoked
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
 
     // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -742,14 +768,15 @@ public class ExecutionListenerTest {
 
     testHelper.deploy(model);
 
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -769,17 +796,17 @@ public class ExecutionListenerTest {
         .userTask("afterCatch")
         .endEvent();
 
-    System.out.println(Bpmn.convertToString(model));
     testHelper.deploy(model);
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
     Task afterCatch = taskService.createTaskQuery().singleResult();
     assertNotNull(afterCatch);
     assertEquals("afterCatch", afterCatch.getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
 
     // and completing this task ends the process instance
     taskService.complete(afterCatch.getId());
@@ -805,7 +832,7 @@ public class ExecutionListenerTest {
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
 
-    // when
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
@@ -833,15 +860,15 @@ public class ExecutionListenerTest {
         .done();
 
     testHelper.deploy(model);
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
-    // TODO verify for something else? but what?
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
@@ -866,9 +893,9 @@ public class ExecutionListenerTest {
 
     testHelper.deploy(model);
 
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
@@ -877,7 +904,7 @@ public class ExecutionListenerTest {
   }
 
   @Test
-  public void testThrowBpmnErrorInEndListenerMessageCorrelation() {
+  public void testThrowBpmnErrorInEndListenerMessageCorrelationShouldNotTriggerPropagation() {
     // given
     BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
         .startEvent()
@@ -908,8 +935,8 @@ public class ExecutionListenerTest {
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("taskWithListener", taskService.createTaskQuery().singleResult().getName());
 
-    // when
     try {
+      // when the listeners are invoked
       runtimeService.correlateMessage("foo");
       fail("Expected exception");
     } catch (Exception e) {
@@ -924,6 +951,7 @@ public class ExecutionListenerTest {
 
   @Test
   public void testThrowBpmnErrorInStartListenerServiceTaskAndEndListener() {
+    // given
     BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
         .startEvent()
         .userTask("userTask1")
@@ -944,10 +972,14 @@ public class ExecutionListenerTest {
 
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    // end listener is called
     assertEquals("bar", runtimeService.createVariableInstanceQuery().variableName("foo").singleResult().getValue());
   }
 
@@ -977,18 +1009,20 @@ public class ExecutionListenerTest {
 
     testHelper.deploy(parent, subprocess);
 
-    // when
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
     // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
   public void testThrowBpmnErrorInEndListenerInConcurrentExecutionAndEventSubprocessWithCatch() {
+    // given
     ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
     BpmnModelInstance model = processBuilder
         .startEvent()
@@ -1010,14 +1044,17 @@ public class ExecutionListenerTest {
     testHelper.deploy(model);
     runtimeService.startProcessInstanceByKey(PROCESS_KEY);
     Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    // when the listeners are invoked
     taskService.complete(task.getId());
 
+    // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test
-  public void testThrowBpmnErrorInStartListenerOnModification() {
+  public void testThrowBpmnErrorInStartListenerOnModificationShouldNotTriggerPropagation() {
     // expect
     thrown.expect(BpmnError.class);
     thrown.expectMessage("business error");
@@ -1048,7 +1085,7 @@ public class ExecutionListenerTest {
 
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(PROCESS_KEY);
 
-    // when
+    // when the listeners are invoked
     runtimeService.createModification(definition.getId()).startBeforeActivity("throw").processInstanceIds(processInstance.getId()).execute();
   }
 

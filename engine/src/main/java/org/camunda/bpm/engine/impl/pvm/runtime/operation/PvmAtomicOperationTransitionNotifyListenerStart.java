@@ -65,7 +65,7 @@ public class PvmAtomicOperationTransitionNotifyListenerStart extends PvmAtomicOp
   }
 
   @Override
-  public boolean isPropagedException() {
+  public boolean shouldHandleFailureAsBpmnError() {
     return true;
   }
 }

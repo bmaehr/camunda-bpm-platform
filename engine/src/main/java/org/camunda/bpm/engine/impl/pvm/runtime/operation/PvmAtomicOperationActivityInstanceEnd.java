@@ -65,8 +65,9 @@ public abstract class PvmAtomicOperationActivityInstanceEnd extends AbstractPvmE
   }
 
   @Override
-  protected void eventNotificationsFailed(PvmExecutionImpl execution) {
+  protected void eventNotificationsFailed(PvmExecutionImpl execution, Exception e) {
     execution.activityInstanceEndListenerFailure();
+    super.eventNotificationsFailed(execution, e);
   }
 
   @Override

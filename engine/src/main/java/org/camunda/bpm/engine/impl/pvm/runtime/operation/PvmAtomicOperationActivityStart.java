@@ -53,7 +53,7 @@ public class PvmAtomicOperationActivityStart extends PvmAtomicOperationActivityI
   }
 
   @Override
-  public boolean isPropagedException() {
+  public boolean shouldHandleFailureAsBpmnError() {
     return true;
   }
 }

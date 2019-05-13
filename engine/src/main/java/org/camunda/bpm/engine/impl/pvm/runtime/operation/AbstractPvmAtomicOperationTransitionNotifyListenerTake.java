@@ -59,7 +59,7 @@ public abstract class AbstractPvmAtomicOperationTransitionNotifyListenerTake ext
   }
 
   @Override
-  public boolean isPropagedException() {
+  public boolean shouldHandleFailureAsBpmnError() {
     return true;
   }
 }

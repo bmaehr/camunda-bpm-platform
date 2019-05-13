@@ -24,6 +24,7 @@ import java.util.Map;
 import junit.framework.AssertionFailedError;
 import org.camunda.bpm.engine.HistoryService;
 import org.camunda.bpm.engine.ManagementService;
+import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.delegate.BpmnError;
@@ -85,6 +86,7 @@ public class ExecutionListenerTest {
   protected TaskService taskService;
   protected HistoryService historyService;
   protected ManagementService managementService;
+  protected RepositoryService repositoryService;
 
   @Before
   public void clearRecorderListener() {
@@ -97,6 +99,7 @@ public class ExecutionListenerTest {
     taskService = processEngineRule.getTaskService();
     historyService = processEngineRule.getHistoryService();
     managementService = processEngineRule.getManagementService();
+    repositoryService = processEngineRule.getRepositoryService();
   }
 
   @Before
@@ -569,37 +572,6 @@ public class ExecutionListenerTest {
   }
 
   @Test
-  public void testThrowBpmnErrorInStartExpressionListenerAndEventSubprocessWithCatch() {
-    // given
-    processEngineRule.getProcessEngineConfiguration().getBeans().put("myListener", new ThrowBPMNErrorDelegate());
-
-    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
-    BpmnModelInstance model = processBuilder
-        .startEvent()
-        .userTask("userTask1")
-        .serviceTask("throw")
-          .camundaExecutionListenerExpression(ExecutionListener.EVENTNAME_START, "${myListener.execute(execution)}")
-          .camundaExpression("${true}")
-        .userTask("afterService")
-        .endEvent()
-        .done();
-    processBuilder.eventSubProcess()
-       .startEvent("errorEvent").error(ERROR_CODE)
-         .userTask("afterCatch")
-       .endEvent();
-
-    testHelper.deploy(model);
-    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
-
-    // when listeners are invoked
-    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
-    taskService.complete(task.getId());
-
-    // then
-    verifyErrorGotCaught();
-  }
-
-  @Test
   public void testThrowBpmnErrorInStartListenerAndEventSubprocessWithCatch() {
     // given
     BpmnModelInstance model = createModelWithCatchInEventSubprocessAndListener(ExecutionListener.EVENTNAME_START);
@@ -642,17 +614,6 @@ public class ExecutionListenerTest {
 
     // then
     verifyErrorGotCaught();
-  }
-
-  @Test
-  @Deployment
-  public void testThrowBpmnErrorInEndScriptListenerAndSubprocessWithCatch() {
-    // when the listeners are invoked
-    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
-
-    // then
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
   }
 
   @Test
@@ -881,52 +842,6 @@ public class ExecutionListenerTest {
   }
 
   @Test
-  public void testThrowBpmnErrorInEndListenerMessageCorrelationShouldNotTriggerPropagation() {
-    // given
-    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
-        .startEvent()
-        .userTask("userTask1")
-        .subProcess("sub")
-          .embeddedSubProcess()
-            .startEvent("inSub")
-            .userTask("taskWithListener")
-            .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
-            .boundaryEvent("errorEvent")
-            .error(ERROR_CODE)
-            .userTask("afterCatch")
-            .endEvent()
-          .subProcessDone()
-        .boundaryEvent("message")
-        .message("foo")
-        .userTask("afterMessage")
-        .endEvent("endEvent")
-        .moveToActivity("sub")
-        .endEvent()
-        .done();
-
-    DeploymentWithDefinitions deployment = testHelper.deploy(model);
-    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
-    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
-    taskService.complete(task.getId());
-    // assert
-    assertEquals(1, taskService.createTaskQuery().list().size());
-    assertEquals("taskWithListener", taskService.createTaskQuery().singleResult().getName());
-
-    try {
-      // when the listeners are invoked
-      runtimeService.correlateMessage("foo");
-      fail("Expected exception");
-    } catch (Exception e) {
-      // then
-      assertTrue(e.getMessage().contains("business error"));
-      assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
-    }
-
-    // cleanup
-    processEngineRule.getRepositoryService().deleteDeployment(deployment.getId(), true, true);
-  }
-
-  @Test
   public void testThrowBpmnErrorInStartListenerServiceTaskAndEndListener() {
     // given
     BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
@@ -1025,6 +940,94 @@ public class ExecutionListenerTest {
   }
 
   @Test
+  public void testThrowBpmnErrorInStartExpressionListenerAndEventSubprocessWithCatch() {
+    // given
+    processEngineRule.getProcessEngineConfiguration().getBeans().put("myListener", new ThrowBPMNErrorDelegate());
+  
+    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
+    BpmnModelInstance model = processBuilder
+        .startEvent()
+        .userTask("userTask1")
+        .serviceTask("throw")
+          .camundaExecutionListenerExpression(ExecutionListener.EVENTNAME_START, "${myListener.execute(execution)}")
+          .camundaExpression("${true}")
+        .userTask("afterService")
+        .endEvent()
+        .done();
+    processBuilder.eventSubProcess()
+       .startEvent("errorEvent").error(ERROR_CODE)
+         .userTask("afterCatch")
+       .endEvent();
+  
+    testHelper.deploy(model);
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+  
+    // when listeners are invoked
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    taskService.complete(task.getId());
+  
+    // then
+    verifyErrorGotCaught();
+  }
+
+  @Test
+  @Deployment
+  public void testThrowBpmnErrorInEndScriptListenerAndSubprocessWithCatch() {
+    // when the listeners are invoked
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+  
+    // then
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
+
+  @Test
+  public void testThrowBpmnErrorInEndListenerMessageCorrelationShouldNotTriggerPropagation() {
+    // given
+    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
+        .startEvent()
+        .userTask("userTask1")
+        .subProcess("sub")
+          .embeddedSubProcess()
+            .startEvent("inSub")
+            .userTask("taskWithListener")
+            .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
+            .boundaryEvent("errorEvent")
+            .error(ERROR_CODE)
+            .userTask("afterCatch")
+            .endEvent()
+          .subProcessDone()
+        .boundaryEvent("message")
+        .message("foo")
+        .userTask("afterMessage")
+        .endEvent("endEvent")
+        .moveToActivity("sub")
+        .endEvent()
+        .done();
+  
+    DeploymentWithDefinitions deployment = testHelper.deploy(model);
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+    taskService.complete(task.getId());
+    // assert
+    assertEquals(1, taskService.createTaskQuery().list().size());
+    assertEquals("taskWithListener", taskService.createTaskQuery().singleResult().getName());
+  
+    try {
+      // when the listeners are invoked
+      runtimeService.correlateMessage("foo");
+      fail("Expected exception");
+    } catch (Exception e) {
+      // then
+      assertTrue(e.getMessage().contains("business error"));
+      assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    }
+  
+    // cleanup
+    repositoryService.deleteDeployment(deployment.getId(), true, true);
+  }
+
+  @Test
   public void testThrowBpmnErrorInStartListenerOnModificationShouldNotTriggerPropagation() {
     // expect
     thrown.expect(BpmnError.class);
@@ -1058,6 +1061,76 @@ public class ExecutionListenerTest {
 
     // when the listeners are invoked
     runtimeService.createModification(definition.getId()).startBeforeActivity("throw").processInstanceIds(processInstance.getId()).execute();
+  }
+
+  @Test
+  public void testThrowBpmnErrorInStartListenerOfStartEvenShouldNotTriggerPropagattion() {
+    // given
+    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
+    BpmnModelInstance model = processBuilder
+        .startEvent()
+        .userTask("afterThrow")
+        .endEvent()
+        .done();
+
+    processBuilder.eventSubProcess()
+        .startEvent("errorEvent").error(ERROR_CODE)
+        .userTask("afterCatch")
+        .endEvent();
+
+    CamundaExecutionListener listener = model.newInstance(CamundaExecutionListener.class);
+    listener.setCamundaEvent(ExecutionListener.EVENTNAME_START);
+    listener.setCamundaClass(ThrowBPMNErrorDelegate.class.getName());
+    model.<org.camunda.bpm.model.bpmn.instance.Process>getModelElementById(PROCESS_KEY).builder().addExtensionElement(listener);
+
+    DeploymentWithDefinitions deployment = testHelper.deploy(model);
+
+    try {
+      // when listeners are invoked
+      runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+      fail("Exception expected");
+    } catch (Exception e) {
+      // then
+      assertTrue(e.getMessage().contains("business error"));
+      assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    }
+
+    // cleanup
+    repositoryService.deleteDeployment(deployment.getId(), true, true);
+  }
+
+  @Test
+  public void testThrowBpmnErrorInEndListenerOfStartEvenShouldNotTriggerPropagattion() {
+    // given
+    ProcessBuilder processBuilder = Bpmn.createExecutableProcess(PROCESS_KEY);
+    BpmnModelInstance model = processBuilder
+        .startEvent()
+        .endEvent()
+        .done();
+
+    processBuilder.eventSubProcess()
+        .startEvent("errorEvent").error(ERROR_CODE)
+        .userTask("afterCatch")
+        .endEvent();
+
+    CamundaExecutionListener listener = model.newInstance(CamundaExecutionListener.class);
+    listener.setCamundaEvent(ExecutionListener.EVENTNAME_END);
+    listener.setCamundaClass(ThrowBPMNErrorDelegate.class.getName());
+    model.<org.camunda.bpm.model.bpmn.instance.Process>getModelElementById(PROCESS_KEY).builder().addExtensionElement(listener);
+
+    DeploymentWithDefinitions deployment = testHelper.deploy(model);
+
+    try {
+      // when listeners are invoked
+      runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+      fail("Exception expected");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("business error"));
+      assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
+    }
+
+    // cleanup
+    repositoryService.deleteDeployment(deployment.getId(), true, true);
   }
 
   protected BpmnModelInstance createModelWithCatchInServiceTaskAndListener(String eventName) {

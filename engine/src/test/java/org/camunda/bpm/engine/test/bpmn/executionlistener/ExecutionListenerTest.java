@@ -756,36 +756,6 @@ public class ExecutionListenerTest {
   }
 
   @Test
-  public void testThrowUncaughtBpmnErrorFromEndListenerShouldNotTriggerListenerAgain() {
-
-    // given
-    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
-        .startEvent()
-        .userTask("userTask1")
-        .serviceTask("throw")
-          .camundaExpression("${true}")
-          .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
-        .endEvent()
-        .done();
-
-    testHelper.deploy(model);
-
-    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
-    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
-
-    // when the listeners are invoked
-    taskService.complete(task.getId());
-
-    // then
-
-    // the process has ended, because the error was not caught
-    assertEquals(0, runtimeService.createExecutionQuery().count());
-
-    // the listener was only called once
-    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
-  }
-
-  @Test
   public void testThrowBpmnErrorInEndListenerOfLastEventAndServiceTaskWithCatch() {
     // given
     BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
@@ -979,6 +949,36 @@ public class ExecutionListenerTest {
     // then
     assertEquals(1, taskService.createTaskQuery().list().size());
     assertEquals("afterCatch", taskService.createTaskQuery().singleResult().getName());
+  }
+
+  @Test
+  public void testThrowUncaughtBpmnErrorFromEndListenerShouldNotTriggerListenerAgain() {
+  
+    // given
+    BpmnModelInstance model = Bpmn.createExecutableProcess(PROCESS_KEY)
+        .startEvent()
+        .userTask("userTask1")
+        .serviceTask("throw")
+          .camundaExpression("${true}")
+          .camundaExecutionListenerClass(ExecutionListener.EVENTNAME_END, ThrowBPMNErrorDelegate.class.getName())
+        .endEvent()
+        .done();
+  
+    testHelper.deploy(model);
+  
+    runtimeService.startProcessInstanceByKey(PROCESS_KEY);
+    Task task = taskService.createTaskQuery().taskDefinitionKey("userTask1").singleResult();
+  
+    // when the listeners are invoked
+    taskService.complete(task.getId());
+  
+    // then
+  
+    // the process has ended, because the error was not caught
+    assertEquals(0, runtimeService.createExecutionQuery().count());
+  
+    // the listener was only called once
+    assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
   @Test

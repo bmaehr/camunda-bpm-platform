@@ -919,7 +919,7 @@ public class ExecutionListenerTest {
         .startEvent()
         .userTask("userTask1")
         .serviceTask("throw")
-          .camundaExecutionListenerExpression(ExecutionListener.EVENTNAME_START, "${myListener.execute(execution)}")
+          .camundaExecutionListenerExpression(ExecutionListener.EVENTNAME_START, "${myListener.notify(execution)}")
           .camundaExpression("${true}")
         .userTask("afterService")
         .endEvent()
@@ -1197,12 +1197,12 @@ public class ExecutionListenerTest {
     assertEquals(1, ThrowBPMNErrorDelegate.INVOCATIONS);
   }
 
-  public static class ThrowBPMNErrorDelegate implements JavaDelegate {
+  public static class ThrowBPMNErrorDelegate implements ExecutionListener {
 
     public static int INVOCATIONS = 0;
 
     @Override
-    public void execute(DelegateExecution execution) throws Exception {
+    public void notify(DelegateExecution execution) throws Exception {
       INVOCATIONS++;
       throw new BpmnError(ERROR_CODE, "business error");
     }

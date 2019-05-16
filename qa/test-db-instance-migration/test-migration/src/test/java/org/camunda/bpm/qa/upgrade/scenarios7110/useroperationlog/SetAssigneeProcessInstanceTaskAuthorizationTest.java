@@ -50,6 +50,7 @@ public class SetAssigneeProcessInstanceTaskAuthorizationTest {
     historyService = engineRule.getHistoryService();
     authorizationService = engineRule.getAuthorizationService();
     engineConfiguration = engineRule.getProcessEngineConfiguration();
+    engineRule.getIdentityService().setAuthenticatedUserId("jane208");
   }
 
   @After
@@ -64,7 +65,7 @@ public class SetAssigneeProcessInstanceTaskAuthorizationTest {
     UserOperationLogQuery query = historyService.createUserOperationLogQuery().taskId("myTaskForUserOperationLog");
 
     // then
-    assertEquals(0,query.count());
+    assertEquals(0, query.count());
   }
   
   @Test

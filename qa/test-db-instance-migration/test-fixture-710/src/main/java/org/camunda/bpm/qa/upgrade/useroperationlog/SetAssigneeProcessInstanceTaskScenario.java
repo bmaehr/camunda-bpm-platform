@@ -38,7 +38,6 @@ public class SetAssigneeProcessInstanceTaskScenario {
   @Deployment
   public static String deploy() {
     return "org/camunda/bpm/qa/upgrade/useroperationlog/oneTaskProcess.bpmn20.xml";
-    //TODO other
   }
 
   @DescribesScenario("createUserOperationLogEntries")

@@ -19,29 +19,8 @@ package org.camunda.bpm.qa.upgrade;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
-import org.camunda.bpm.qa.upgrade.gson.ProcessInstanceModificationScenario;
-import org.camunda.bpm.qa.upgrade.gson.TaskFilterPropertiesScenario;
-import org.camunda.bpm.qa.upgrade.gson.TaskFilterScenario;
-import org.camunda.bpm.qa.upgrade.gson.TaskFilterVariablesScenario;
-import org.camunda.bpm.qa.upgrade.gson.TimerChangeJobDefinitionScenario;
-import org.camunda.bpm.qa.upgrade.gson.TimerChangeProcessDefinitionScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.DeleteHistoricDecisionsBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.DeleteHistoricProcessInstancesBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.DeleteProcessInstancesBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.MigrationBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.ModificationBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.RestartProcessInstanceBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.SetExternalTaskRetriesBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.SetJobRetriesBatchScenario;
-import org.camunda.bpm.qa.upgrade.gson.batch.UpdateProcessInstanceSuspendStateBatchScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.DeploymentDeployTimeScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.EventSubscriptionCreateTimeScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.ExternalTaskLockExpTimeScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.IncidentTimestampScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.JobTimestampsScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.MeterLogTimestampScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.TaskCreateTimeScenario;
-import org.camunda.bpm.qa.upgrade.timestamp.UserLockExpTimeScenario;
+import org.camunda.bpm.qa.upgrade.useroperationlog.CreateStandaloneTaskScenario;
+import org.camunda.bpm.qa.upgrade.useroperationlog.SetAssigneeProcessInstanceTaskScenario;
 
 /**
  * @author Tassilo Weidner
@@ -61,29 +40,31 @@ public class TestFixture {
     // register test scenarios
     ScenarioRunner runner = new ScenarioRunner(processEngine, ENGINE_VERSION);
 
-    runner.setupScenarios(DeleteHistoricDecisionsBatchScenario.class);
-    runner.setupScenarios(DeleteHistoricProcessInstancesBatchScenario.class);
-    runner.setupScenarios(DeleteProcessInstancesBatchScenario.class);
-    runner.setupScenarios(SetExternalTaskRetriesBatchScenario.class);
-    runner.setupScenarios(SetJobRetriesBatchScenario.class);
-    runner.setupScenarios(UpdateProcessInstanceSuspendStateBatchScenario.class);
-    runner.setupScenarios(RestartProcessInstanceBatchScenario.class);
-    runner.setupScenarios(TimerChangeProcessDefinitionScenario.class);
-    runner.setupScenarios(TimerChangeJobDefinitionScenario.class);
-    runner.setupScenarios(ModificationBatchScenario.class);
-    runner.setupScenarios(ProcessInstanceModificationScenario.class);
-    runner.setupScenarios(MigrationBatchScenario.class);
-    runner.setupScenarios(TaskFilterScenario.class);
-    runner.setupScenarios(TaskFilterVariablesScenario.class);
-    runner.setupScenarios(TaskFilterPropertiesScenario.class);
-    runner.setupScenarios(DeploymentDeployTimeScenario.class);
-    runner.setupScenarios(JobTimestampsScenario.class);
-    runner.setupScenarios(IncidentTimestampScenario.class);
-    runner.setupScenarios(TaskCreateTimeScenario.class);
-    runner.setupScenarios(ExternalTaskLockExpTimeScenario.class);
-    runner.setupScenarios(EventSubscriptionCreateTimeScenario.class);
-    runner.setupScenarios(MeterLogTimestampScenario.class);
-    runner.setupScenarios(UserLockExpTimeScenario.class);
+//    runner.setupScenarios(DeleteHistoricDecisionsBatchScenario.class);
+//    runner.setupScenarios(DeleteHistoricProcessInstancesBatchScenario.class);
+//    runner.setupScenarios(DeleteProcessInstancesBatchScenario.class);
+//    runner.setupScenarios(SetExternalTaskRetriesBatchScenario.class);
+//    runner.setupScenarios(SetJobRetriesBatchScenario.class);
+//    runner.setupScenarios(UpdateProcessInstanceSuspendStateBatchScenario.class);
+//    runner.setupScenarios(RestartProcessInstanceBatchScenario.class);
+//    runner.setupScenarios(TimerChangeProcessDefinitionScenario.class);
+//    runner.setupScenarios(TimerChangeJobDefinitionScenario.class);
+//    runner.setupScenarios(ModificationBatchScenario.class);
+//    runner.setupScenarios(ProcessInstanceModificationScenario.class);
+//    runner.setupScenarios(MigrationBatchScenario.class);
+//    runner.setupScenarios(TaskFilterScenario.class);
+//    runner.setupScenarios(TaskFilterVariablesScenario.class);
+//    runner.setupScenarios(TaskFilterPropertiesScenario.class);
+//    runner.setupScenarios(DeploymentDeployTimeScenario.class);
+//    runner.setupScenarios(JobTimestampsScenario.class);
+//    runner.setupScenarios(IncidentTimestampScenario.class);
+//    runner.setupScenarios(TaskCreateTimeScenario.class);
+//    runner.setupScenarios(ExternalTaskLockExpTimeScenario.class);
+//    runner.setupScenarios(EventSubscriptionCreateTimeScenario.class);
+//    runner.setupScenarios(MeterLogTimestampScenario.class);
+//    runner.setupScenarios(UserLockExpTimeScenario.class);
+    runner.setupScenarios(CreateStandaloneTaskScenario.class);
+    runner.setupScenarios(SetAssigneeProcessInstanceTaskScenario.class);
 
     processEngine.close();
   }

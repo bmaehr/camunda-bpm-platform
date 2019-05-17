@@ -56,23 +56,26 @@ public class SetAssigneeProcessInstanceTaskAuthorizationTest {
   @After
   public void tearDown() {
     engineRule.getProcessEngineConfiguration().setAuthorizationEnabled(false);
+    engineRule.getIdentityService().clearAuthentication();
   }
 
   @Test
   public void testWithoutAuthorization() {
     // given
     engineRule.getProcessEngineConfiguration().setAuthorizationEnabled(true);
-    UserOperationLogQuery query = historyService.createUserOperationLogQuery().taskId("myTaskForUserOperationLog");
+
+    // when
+    UserOperationLogQuery query = historyService.createUserOperationLogQuery().processDefinitionKey("oneTaskProcess_userOpLog");
 
     // then
     assertEquals(1, query.count());
   }
   
   @Test
-  public void testWitheadHistoryPermissionOnAnyProcessDefinition() {
+  public void testWithReadHistoryPermissionOnAnyProcessDefinition() {
     // given
     Authorization auth = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
-    auth.setUserId("baloo");
+    auth.setUserId("user003");
     auth.setPermissions(new Permissions[] {Permissions.READ_HISTORY});
     auth.setResource(Resources.PROCESS_DEFINITION);
     auth.setResourceId("*");
@@ -87,10 +90,10 @@ public class SetAssigneeProcessInstanceTaskAuthorizationTest {
   }
 
   @Test
-  public void testWitheadHistoryPermissionOnProcessDefinition() {
+  public void testWithReadHistoryPermissionOnProcessDefinition() {
     // given
     Authorization auth = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
-    auth.setUserId("baloo");
+    auth.setUserId("user004");
     auth.setPermissions(new Permissions[] {Permissions.READ_HISTORY});
     auth.setResource(Resources.PROCESS_DEFINITION);
     auth.setResourceId("oneTaskProcess_userOpLog");

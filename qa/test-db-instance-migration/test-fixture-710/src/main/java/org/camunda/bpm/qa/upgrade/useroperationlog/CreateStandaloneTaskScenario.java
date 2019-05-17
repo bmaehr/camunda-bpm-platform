@@ -40,6 +40,7 @@ public class CreateStandaloneTaskScenario {
         identityService.setAuthentication(user.getId(), null);
 
         TaskService taskService = engine.getTaskService();
+
         String taskId = "myTaskForUserOperationLog";
         Task task = taskService.newTask(taskId);
         taskService.saveTask(task);

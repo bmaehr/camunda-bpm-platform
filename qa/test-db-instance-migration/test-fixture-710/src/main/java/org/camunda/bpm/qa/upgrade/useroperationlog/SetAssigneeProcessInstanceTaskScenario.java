@@ -16,13 +16,11 @@
  */
 package org.camunda.bpm.qa.upgrade.useroperationlog;
 
-import java.util.Date;
 import java.util.List;
 
 import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.TaskService;
-import org.camunda.bpm.engine.history.UserOperationLogEntry;
 import org.camunda.bpm.engine.identity.User;
 import org.camunda.bpm.engine.task.Task;
 import org.camunda.bpm.engine.test.Deployment;
@@ -47,8 +45,8 @@ public class SetAssigneeProcessInstanceTaskScenario {
         IdentityService identityService = engine.getIdentityService();
         String processInstanceBusinessKey = "SetAssigneeProcessInstanceTaskScenario";
         engine.getRuntimeService().startProcessInstanceByKey("oneTaskProcess_userOpLog", processInstanceBusinessKey);
-        Date date = new Date();
-        User user = identityService.newUser("mary"+date.getTime());
+
+        User user = identityService.newUser("mary");
         identityService.saveUser(user);
         identityService.setAuthentication(user.getId(), null);
 
@@ -56,9 +54,8 @@ public class SetAssigneeProcessInstanceTaskScenario {
         List<Task> list = taskService.createTaskQuery().processInstanceBusinessKey(processInstanceBusinessKey).list();
         Task task = list.get(0);
         taskService.setAssignee(task.getId(), "john");
-        
-        List<UserOperationLogEntry> list2 = engine.getHistoryService().createUserOperationLogQuery().list();
-        System.out.println(list2.size());
+
+        identityService.clearAuthentication();
       }
     };
   }

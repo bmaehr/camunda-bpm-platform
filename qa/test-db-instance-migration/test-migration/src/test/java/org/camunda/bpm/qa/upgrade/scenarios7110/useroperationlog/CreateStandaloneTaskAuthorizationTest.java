@@ -58,12 +58,15 @@ public class CreateStandaloneTaskAuthorizationTest {
   @After
   public void tearDown() {
     engineRule.getProcessEngineConfiguration().setAuthorizationEnabled(false);
+    engineRule.getIdentityService().clearAuthentication();
   }
 
   @Test
   public void testWithoutAuthorization() {
     // given
     engineRule.getProcessEngineConfiguration().setAuthorizationEnabled(true);
+
+    // when
     UserOperationLogQuery query = historyService.createUserOperationLogQuery().taskId("myTaskForUserOperationLog");
 
     // then
@@ -74,7 +77,7 @@ public class CreateStandaloneTaskAuthorizationTest {
   public void testWithReadHistoryPermissionOnAnyProcessDefinition() {
     // given
     Authorization auth = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
-    auth.setUserId("baloo");
+    auth.setUserId("user001");
     auth.setPermissions(new Permissions[] {Permissions.READ_HISTORY});
     auth.setResource(Resources.PROCESS_DEFINITION);
     auth.setResourceId("*");
@@ -92,7 +95,7 @@ public class CreateStandaloneTaskAuthorizationTest {
   public void testWithReadHistoryPermissionOnProcessDefinition() {
     // given
     Authorization auth = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
-    auth.setUserId("baloo");
+    auth.setUserId("user002");
     auth.setPermissions(new Permissions[] {Permissions.READ_HISTORY});
     auth.setResource(Resources.PROCESS_DEFINITION);
     auth.setResourceId("something");
